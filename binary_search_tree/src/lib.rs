@@ -1,7 +1,24 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 
-type Edge = Option<Rc<RefCell<Node>>>;
+#[derive(Debug)]
+enum Edge {
+    Null,
+    Link(Rc<RefCell<Node>>),
+}
+
+impl Edge {
+    pub fn new(key: usize, value: String) -> Self {
+        Edge::Link(Rc::new(RefCell::new(Node::new(key, value))))
+    }
+
+    pub fn is_null(&self) -> bool {
+        match *self {
+            Edge::Link(_) => false,
+            Edge::Null => true,
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct Node {
@@ -16,8 +33,8 @@ impl Node {
         Node {
             key,
             value,
-            left: None,
-            right: None,
+            left: Edge::Null,
+            right: Edge::Null,
         }
     }
 }
@@ -29,7 +46,7 @@ pub struct BST {
 
 impl BST {
     pub fn new() -> Self {
-        BST { root: None }
+        BST { root: Edge::Null }
     }
 
     pub fn put(&mut self, key: usize, value: String) {
@@ -37,7 +54,7 @@ impl BST {
     }
 
     fn insert(x: &Edge, key: usize, value: String) -> Edge {
-        if let Some(node) = x {
+        if let Edge::Link(node) = x {
             if key < node.borrow().key {
                 let new_node = BST::insert(&node.borrow().left, key, value);
                 node.borrow_mut().left = new_node;
@@ -46,10 +63,10 @@ impl BST {
                 node.borrow_mut().right = new_node;
             }
             // TODO: if same key, update value
-            return Some(Rc::clone(node));
+            return Edge::Link(Rc::clone(node));
         }
-        // x = None
-        Some(Rc::new(RefCell::new(Node::new(key, value))))
+        // x = Null
+        Edge::new(key, value)
     }
 }
 
@@ -58,7 +75,7 @@ mod tests {
     use super::*;
 
     fn check_key(cell: &Edge, key: usize) {
-        if let Some(node) = cell {
+        if let Edge::Link(node) = cell {
             assert_eq!(node.borrow().key, key);
         } else {
             panic!("Node can't be None");
@@ -68,14 +85,14 @@ mod tests {
     #[test]
     fn create_node() {
         let n = Node::new(1, "a".to_string());
-        assert_eq!(n.left.is_none(), true);
-        assert_eq!(n.right.is_none(), true);
+        assert_eq!(n.left.is_null(), true);
+        assert_eq!(n.right.is_null(), true);
     }
 
     #[test]
     fn build_tree() {
         let mut bst = BST::new();
-        assert_eq!(bst.root.is_none(), true);
+        assert_eq!(bst.root.is_null(), true);
 
         // New node becomes root
         bst.put(2, "b".to_string());
@@ -83,7 +100,7 @@ mod tests {
 
         // New node becomes left node
         bst.put(1, "a".to_string());
-        if let Some(node) = &bst.root {
+        if let Edge::Link(node) = &bst.root {
             check_key(&node.borrow().left, 1);
         } else {
             panic!("BST must have root");
@@ -91,7 +108,7 @@ mod tests {
 
         // New node becomes right node
         bst.put(3, "c".to_string());
-        if let Some(node) = &bst.root {
+        if let Edge::Link(node) = &bst.root {
             check_key(&node.borrow().right, 3);
         } else {
             panic!("BST must have root");
