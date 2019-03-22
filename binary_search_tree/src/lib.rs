@@ -31,24 +31,23 @@ impl BST {
     }
 
     pub fn put(&mut self, key: usize, value: String) {
-        let node = BST::insert(&self.root, key, value);
-        self.root = Some(node);
+        self.root = BST::insert(&self.root, key, value);
     }
 
-    fn insert(x: &Option<Rc<RefCell<Node>>>, key: usize, value: String) -> Rc<RefCell<Node>> {
+    fn insert(x: &Option<Rc<RefCell<Node>>>, key: usize, value: String) -> Option<Rc<RefCell<Node>>> {
         if let Some(node) = x {
             if key < node.borrow().key {
                 let new_node = BST::insert(&node.borrow().left, key, value);
-                node.borrow_mut().left = Some(new_node);
+                node.borrow_mut().left = new_node;
             } else if key > node.borrow().key {
                 let new_node = BST::insert(&node.borrow().right, key, value);
-                node.borrow_mut().right = Some(new_node);
+                node.borrow_mut().right = new_node;
             }
             // TODO: if same key, update value
-            return Rc::clone(node);
+            return Some(Rc::clone(node));
         }
         // x = None
-        Rc::new(RefCell::new(Node::new(key, value)))
+        Some(Rc::new(RefCell::new(Node::new(key, value))))
     }
 }
 
