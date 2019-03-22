@@ -1,12 +1,14 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 
+type Edge = Option<Rc<RefCell<Node>>>;
+
 #[derive(Debug)]
 pub struct Node {
     key: usize,
     value: String,
-    left: Option<Rc<RefCell<Node>>>,
-    right: Option<Rc<RefCell<Node>>>,
+    left: Edge,
+    right: Edge,
 }
 
 impl Node {
@@ -22,7 +24,7 @@ impl Node {
 
 #[derive(Debug)]
 pub struct BST {
-    root: Option<Rc<RefCell<Node>>>,
+    root: Edge,
 }
 
 impl BST {
@@ -34,7 +36,7 @@ impl BST {
         self.root = BST::insert(&self.root, key, value);
     }
 
-    fn insert(x: &Option<Rc<RefCell<Node>>>, key: usize, value: String) -> Option<Rc<RefCell<Node>>> {
+    fn insert(x: &Edge, key: usize, value: String) -> Edge {
         if let Some(node) = x {
             if key < node.borrow().key {
                 let new_node = BST::insert(&node.borrow().left, key, value);
@@ -55,7 +57,7 @@ impl BST {
 mod tests {
     use super::*;
 
-    fn check_key(cell: &Option<Rc<RefCell<Node>>>, key: usize) {
+    fn check_key(cell: &Edge, key: usize) {
         if let Some(node) = cell {
             assert_eq!(node.borrow().key, key);
         } else {
