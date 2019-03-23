@@ -58,6 +58,10 @@ impl BST {
         BST { root: Edge::Null }
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.root.size() == 0
+    }
+
     pub fn size(&self) -> usize {
         self.root.size()
     }
@@ -173,6 +177,10 @@ mod tests {
     #[test]
     fn tree_size() {
         let mut bst = BST::new();
+
+        assert_eq!(bst.is_empty(), true);
+        assert_eq!(bst.size(), 0);
+
         bst.put(8, "S".to_string());
         bst.put(3, "E".to_string());
         bst.put(1, "A".to_string());
@@ -183,6 +191,7 @@ mod tests {
         bst.put(6, "M".to_string());
         bst.put(4, "G".to_string());
 
+        assert_eq!(bst.is_empty(), false);
         assert_eq!(bst.size(), 9);
     }
 }
