@@ -18,6 +18,13 @@ impl Edge {
             Edge::Null => true,
         }
     }
+
+    pub fn size(&self) -> usize {
+        match self {
+            Edge::Link(node) => node.borrow().size,
+            Edge::Null => 0,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -26,6 +33,7 @@ pub struct Node {
     value: String,
     left: Edge,
     right: Edge,
+    size: usize,
 }
 
 impl Node {
@@ -35,6 +43,7 @@ impl Node {
             value,
             left: Edge::Null,
             right: Edge::Null,
+            size: 1,
         }
     }
 }
@@ -47,6 +56,10 @@ pub struct BST {
 impl BST {
     pub fn new() -> Self {
         BST { root: Edge::Null }
+    }
+
+    pub fn size(&self) -> usize {
+        self.root.size()
     }
 
     pub fn put(&mut self, key: usize, value: String) {
@@ -63,6 +76,8 @@ impl BST {
                 node.borrow_mut().right = new_node;
             }
             // TODO: if same key, update value
+            let size = 1 + node.borrow().left.size() + node.borrow().right.size();
+            node.borrow_mut().size = size;
             return Edge::Link(Rc::clone(node));
         }
         // x = Null
@@ -153,5 +168,21 @@ mod tests {
 
         assert_eq!(bst.keys().len(), 9);
         assert_eq!(bst.keys(), vec![1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    }
+
+    #[test]
+    fn tree_size() {
+        let mut bst = BST::new();
+        bst.put(8, "S".to_string());
+        bst.put(3, "E".to_string());
+        bst.put(1, "A".to_string());
+        bst.put(7, "R".to_string());
+        bst.put(2, "C".to_string());
+        bst.put(5, "H".to_string());
+        bst.put(9, "X".to_string());
+        bst.put(6, "M".to_string());
+        bst.put(4, "G".to_string());
+
+        assert_eq!(bst.size(), 9);
     }
 }
