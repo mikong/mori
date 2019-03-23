@@ -68,6 +68,20 @@ impl BST {
         // x = Null
         Edge::new(key, value)
     }
+
+    pub fn keys(&self) -> Vec<usize> {
+        let mut v = Vec::new();
+        BST::inorder(&self.root, &mut v);
+        v
+    }
+
+    fn inorder(x: &Edge, v: &mut Vec<usize>) {
+        if let Edge::Link(node) = x {
+            BST::inorder(&node.borrow().left, v);
+            v.push(node.borrow().key);
+            BST::inorder(&node.borrow().right, v);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -113,5 +127,31 @@ mod tests {
         } else {
             panic!("BST must have root");
         }
+    }
+
+    //          S(8)
+    //         /    \
+    //       E(3)   X(9)
+    //      /   \
+    //  A(1)     R(7)
+    //     \     /
+    //    C(2) H(5)
+    //        /   \
+    //       G(4)  M(6)
+    #[test]
+    fn inorder_traversal() {
+        let mut bst = BST::new();
+        bst.put(8, "S".to_string());
+        bst.put(3, "E".to_string());
+        bst.put(1, "A".to_string());
+        bst.put(7, "R".to_string());
+        bst.put(2, "C".to_string());
+        bst.put(5, "H".to_string());
+        bst.put(9, "X".to_string());
+        bst.put(6, "M".to_string());
+        bst.put(4, "G".to_string());
+
+        assert_eq!(bst.keys().len(), 9);
+        assert_eq!(bst.keys(), vec![1, 2, 3, 4, 5, 6, 7, 8, 9]);
     }
 }
