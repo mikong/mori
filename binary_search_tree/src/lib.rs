@@ -88,6 +88,27 @@ impl BST {
         Edge::new(key, value)
     }
 
+    pub fn delete_min(&mut self) {
+        self.root = BST::remove_min(&self.root);
+    }
+
+    fn remove_min(x: &Edge) -> Edge {
+        if let Edge::Link(node) = x {
+            if node.borrow().left.is_null() {
+                match &node.borrow().right {
+                    Edge::Link(node) => return Edge::Link(Rc::clone(node)),
+                    Edge::Null => return Edge::Null,
+                }
+            }
+            let new_node = BST::remove_min(&node.borrow().left);
+            node.borrow_mut().left = new_node;
+            let size = 1 + node.borrow().left.size() + node.borrow().right.size();
+            node.borrow_mut().size = size;
+            return Edge::Link(Rc::clone(node));
+        }
+        Edge::Null
+    }
+
     pub fn keys(&self) -> Vec<usize> {
         let mut v = Vec::new();
         BST::inorder(&self.root, &mut v);
@@ -113,6 +134,27 @@ mod tests {
         } else {
             panic!("Node can't be None");
         }
+    }
+
+    //          8(S)
+    //         /    \
+    //       3(E)   9(X)
+    //      /   \
+    //  1(A)     7(R)
+    //     \     /
+    //    2(C) 5(H)
+    //        /   \
+    //      4(G)  6(M)
+    fn populate_tree(bst: &mut BST) {
+        bst.put(8, "S".to_string());
+        bst.put(3, "E".to_string());
+        bst.put(1, "A".to_string());
+        bst.put(7, "R".to_string());
+        bst.put(2, "C".to_string());
+        bst.put(5, "H".to_string());
+        bst.put(9, "X".to_string());
+        bst.put(6, "M".to_string());
+        bst.put(4, "G".to_string());
     }
 
     #[test]
@@ -148,27 +190,10 @@ mod tests {
         }
     }
 
-    //          S(8)
-    //         /    \
-    //       E(3)   X(9)
-    //      /   \
-    //  A(1)     R(7)
-    //     \     /
-    //    C(2) H(5)
-    //        /   \
-    //       G(4)  M(6)
     #[test]
     fn inorder_traversal() {
         let mut bst = BST::new();
-        bst.put(8, "S".to_string());
-        bst.put(3, "E".to_string());
-        bst.put(1, "A".to_string());
-        bst.put(7, "R".to_string());
-        bst.put(2, "C".to_string());
-        bst.put(5, "H".to_string());
-        bst.put(9, "X".to_string());
-        bst.put(6, "M".to_string());
-        bst.put(4, "G".to_string());
+        populate_tree(&mut bst);
 
         assert_eq!(bst.keys().len(), 9);
         assert_eq!(bst.keys(), vec![1, 2, 3, 4, 5, 6, 7, 8, 9]);
@@ -181,17 +206,26 @@ mod tests {
         assert_eq!(bst.is_empty(), true);
         assert_eq!(bst.size(), 0);
 
-        bst.put(8, "S".to_string());
-        bst.put(3, "E".to_string());
-        bst.put(1, "A".to_string());
-        bst.put(7, "R".to_string());
-        bst.put(2, "C".to_string());
-        bst.put(5, "H".to_string());
-        bst.put(9, "X".to_string());
-        bst.put(6, "M".to_string());
-        bst.put(4, "G".to_string());
+        populate_tree(&mut bst);
 
         assert_eq!(bst.is_empty(), false);
         assert_eq!(bst.size(), 9);
+    }
+
+    #[test]
+    fn remove_min() {
+        let mut bst = BST::new();
+
+        // delete min an empty BST
+        bst.delete_min();
+
+        populate_tree(&mut bst);
+
+        bst.delete_min();
+        assert_eq!(bst.keys(), vec![2, 3, 4, 5, 6, 7, 8, 9]);
+        bst.delete_min();
+        assert_eq!(bst.keys(), vec![3, 4, 5, 6, 7, 8, 9]);
+        bst.delete_min();
+        assert_eq!(bst.keys(), vec![4, 5, 6, 7, 8, 9]);
     }
 }
