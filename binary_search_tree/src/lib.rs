@@ -66,6 +66,23 @@ impl BST {
         self.root.size()
     }
 
+    pub fn get(&self, key: usize) -> Option<String> {
+        BST::getr(&self.root, key)
+    }
+
+    fn getr(x: &Edge, key: usize) -> Option<String> {
+        if let Edge::Link(node) = x {
+            if key < node.borrow().key {
+                return BST::getr(&node.borrow().left, key);
+            } else if key > node.borrow().key {
+                return BST::getr(&node.borrow().right, key);
+            } else {
+                return Some(node.borrow().value.clone());
+            }
+        }
+        None
+    }
+
     pub fn put(&mut self, key: usize, value: String) {
         self.root = BST::insert(&self.root, key, value);
     }
@@ -188,6 +205,20 @@ mod tests {
         } else {
             panic!("BST must have root");
         }
+    }
+
+    #[test]
+    fn get_value() {
+        let mut bst = BST::new();
+        populate_tree(&mut bst);
+
+        assert_eq!(bst.get(8), Some("S".to_string()));
+        assert_eq!(bst.get(2), Some("C".to_string()));
+        assert_eq!(bst.get(9), Some("X".to_string()));
+        assert_eq!(bst.get(5), Some("H".to_string()));
+        assert_eq!(bst.get(10), None);
+
+        // TODO: get after delete
     }
 
     #[test]
