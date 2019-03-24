@@ -126,6 +126,26 @@ impl BST {
         Edge::Null
     }
 
+    pub fn min(&self) -> Option<usize> {
+        if let Edge::Link(node) = BST::minimum(&self.root) {
+            return Some(node.borrow().key)
+        }
+
+        None
+    }
+
+    fn minimum(x: &Edge) -> Edge {
+        if let Edge::Link(node) = x {
+            if node.borrow().left.is_null() {
+                return Edge::Link(Rc::clone(node));
+            } else {
+                return BST::minimum(&node.borrow().left);
+            }
+        }
+
+        Edge::Null
+    }
+
     pub fn keys(&self) -> Vec<usize> {
         let mut v = Vec::new();
         BST::inorder(&self.root, &mut v);
@@ -258,5 +278,22 @@ mod tests {
         assert_eq!(bst.keys(), vec![3, 4, 5, 6, 7, 8, 9]);
         bst.delete_min();
         assert_eq!(bst.keys(), vec![4, 5, 6, 7, 8, 9]);
+    }
+
+    #[test]
+    fn min() {
+        let mut bst = BST::new();
+
+        assert_eq!(bst.min(), None);
+
+        populate_tree(&mut bst);
+
+        assert_eq!(bst.min(), Some(1));
+        bst.delete_min();
+        assert_eq!(bst.min(), Some(2));
+        bst.delete_min();
+        assert_eq!(bst.min(), Some(3));
+        bst.delete_min();
+        assert_eq!(bst.min(), Some(4));
     }
 }
