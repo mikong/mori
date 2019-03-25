@@ -1,83 +1,89 @@
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::cell::Ref;
 
 #[derive(Debug)]
-enum Edge {
-    Null,
-    Link(Rc<RefCell<Node>>),
-}
-
-impl Edge {
-    pub fn new(key: usize, value: String) -> Self {
-        Edge::Link(Rc::new(RefCell::new(Node::new(key, value))))
-    }
-
-    pub fn is_null(&self) -> bool {
-        match *self {
-            Edge::Link(_) => false,
-            Edge::Null => true,
-        }
-    }
-
-    pub fn size(&self) -> usize {
-        match self {
-            Edge::Link(node) => node.borrow().size,
-            Edge::Null => 0,
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct Node {
-    key: usize,
-    value: String,
-    left: Edge,
-    right: Edge,
-    size: usize,
-}
+pub struct Node(Rc<RefCell<RawNode>>);
 
 impl Node {
     pub fn new(key: usize, value: String) -> Self {
-        Node {
+        let node = Rc::new(RefCell::new(RawNode {
             key,
             value,
-            left: Edge::Null,
-            right: Edge::Null,
+            left: None,
+            right: None,
             size: 1,
+        }));
+        Node(node)
+    }
+
+    pub fn get(&self) -> Ref<RawNode> {
+        self.0.borrow()
+    }
+
+    pub fn set_left(&self, node: Option<Node>) {
+        self.0.borrow_mut().left = node;
+    }
+
+    pub fn set_right(&self, node: Option<Node>) {
+        self.0.borrow_mut().right = node;
+    }
+
+    pub fn set_size(&self, size: usize) {
+        self.0.borrow_mut().size = size;
+    }
+
+    pub fn clone(&self) -> Self {
+        Node(Rc::clone(&self.0))
+    }
+
+    pub fn size(node: &Option<Node>) -> usize {
+        match node {
+            Some(node) => node.0.borrow().size,
+            None => 0,
         }
     }
+}
+
+#[derive(Debug)]
+pub struct RawNode {
+    key: usize,
+    value: String,
+    left: Option<Node>,
+    right: Option<Node>,
+    size: usize,
 }
 
 #[derive(Debug)]
 pub struct BST {
-    root: Edge,
+    root: Option<Node>,
 }
 
 impl BST {
     pub fn new() -> Self {
-        BST { root: Edge::Null }
+        BST { root: None }
     }
 
     pub fn is_empty(&self) -> bool {
-        self.root.size() == 0
+        Node::size(&self.root) == 0
     }
 
     pub fn size(&self) -> usize {
-        self.root.size()
+        Node::size(&self.root)
     }
 
     pub fn get(&self, key: usize) -> Option<String> {
         BST::getr(&self.root, key)
     }
 
-    fn getr(x: &Edge, key: usize) -> Option<String> {
-        if let Edge::Link(node) = x {
-            if key < node.borrow().key {
-                return BST::getr(&node.borrow().left, key);
-            } else if key > node.borrow().key {
-                return BST::getr(&node.borrow().right, key);
+    fn getr(x: &Option<Node>, key: usize) -> Option<String> {
+        if let Some(node) = x {
+            if key < node.get().key {
+                return BST::getr(&node.get().left, key);
+            } else if key > node.get().key {
+                return BST::getr(&node.get().right, key);
             } else {
-                return Some(node.borrow().value.clone());
+                return Some(node.get().value.clone());
             }
         }
         None
@@ -87,63 +93,63 @@ impl BST {
         self.root = BST::insert(&self.root, key, value);
     }
 
-    fn insert(x: &Edge, key: usize, value: String) -> Edge {
-        if let Edge::Link(node) = x {
-            if key < node.borrow().key {
-                let new_node = BST::insert(&node.borrow().left, key, value);
-                node.borrow_mut().left = new_node;
-            } else if key > node.borrow().key {
-                let new_node = BST::insert(&node.borrow().right, key, value);
-                node.borrow_mut().right = new_node;
+    fn insert(x: &Option<Node>, key: usize, value: String) -> Option<Node> {
+        if let Some(node) = x {
+            if key < node.get().key {
+                let new_node = BST::insert(&node.get().left, key, value);
+                node.set_left(new_node);
+            } else if key > node.get().key {
+                let new_node = BST::insert(&node.get().right, key, value);
+                node.set_right(new_node);
             }
             // TODO: if same key, update value
-            let size = 1 + node.borrow().left.size() + node.borrow().right.size();
-            node.borrow_mut().size = size;
-            return Edge::Link(Rc::clone(node));
+            let size = 1 + Node::size(&node.get().left) + Node::size(&node.get().right);
+            node.set_size(size);
+            return Some(node.clone());
         }
         // x = Null
-        Edge::new(key, value)
+        Some(Node::new(key, value))
     }
 
     pub fn delete_min(&mut self) {
         self.root = BST::remove_min(&self.root);
     }
 
-    fn remove_min(x: &Edge) -> Edge {
-        if let Edge::Link(node) = x {
-            if node.borrow().left.is_null() {
-                match &node.borrow().right {
-                    Edge::Link(node) => return Edge::Link(Rc::clone(node)),
-                    Edge::Null => return Edge::Null,
+    fn remove_min(x: &Option<Node>) -> Option<Node> {
+        if let Some(node) = x {
+            if node.get().left.is_none() {
+                match &node.get().right {
+                    Some(node) => return Some(node.clone()),
+                    None => return None,
                 }
             }
-            let new_node = BST::remove_min(&node.borrow().left);
-            node.borrow_mut().left = new_node;
-            let size = 1 + node.borrow().left.size() + node.borrow().right.size();
-            node.borrow_mut().size = size;
-            return Edge::Link(Rc::clone(node));
+            let new_node = BST::remove_min(&node.get().left);
+            node.set_left(new_node);
+            let size = 1 + Node::size(&node.get().left) + Node::size(&node.get().right);
+            node.set_size(size);
+            return Some(node.clone());
         }
-        Edge::Null
+        None
     }
 
     pub fn min(&self) -> Option<usize> {
-        if let Edge::Link(node) = BST::minimum(&self.root) {
-            return Some(node.borrow().key)
+        if let Some(node) = BST::minimum(&self.root) {
+            return Some(node.get().key)
         }
 
         None
     }
 
-    fn minimum(x: &Edge) -> Edge {
-        if let Edge::Link(node) = x {
-            if node.borrow().left.is_null() {
-                return Edge::Link(Rc::clone(node));
+    fn minimum(x: &Option<Node>) -> Option<Node> {
+        if let Some(node) = x {
+            if node.get().left.is_none() {
+                return Some(node.clone());
             } else {
-                return BST::minimum(&node.borrow().left);
+                return BST::minimum(&node.get().left);
             }
         }
 
-        Edge::Null
+        None
     }
 
     pub fn keys(&self) -> Vec<usize> {
@@ -152,11 +158,11 @@ impl BST {
         v
     }
 
-    fn inorder(x: &Edge, v: &mut Vec<usize>) {
-        if let Edge::Link(node) = x {
-            BST::inorder(&node.borrow().left, v);
-            v.push(node.borrow().key);
-            BST::inorder(&node.borrow().right, v);
+    fn inorder(x: &Option<Node>, v: &mut Vec<usize>) {
+        if let Some(node) = x {
+            BST::inorder(&node.get().left, v);
+            v.push(node.get().key);
+            BST::inorder(&node.get().right, v);
         }
     }
 }
@@ -165,9 +171,9 @@ impl BST {
 mod tests {
     use super::*;
 
-    fn check_key(cell: &Edge, key: usize) {
-        if let Edge::Link(node) = cell {
-            assert_eq!(node.borrow().key, key);
+    fn check_key(cell: &Option<Node>, key: usize) {
+        if let Some(node) = cell {
+            assert_eq!(node.get().key, key);
         } else {
             panic!("Node can't be None");
         }
@@ -197,14 +203,14 @@ mod tests {
     #[test]
     fn create_node() {
         let n = Node::new(1, "a".to_string());
-        assert_eq!(n.left.is_null(), true);
-        assert_eq!(n.right.is_null(), true);
+        assert_eq!(n.get().left.is_none(), true);
+        assert_eq!(n.get().right.is_none(), true);
     }
 
     #[test]
     fn build_tree() {
         let mut bst = BST::new();
-        assert_eq!(bst.root.is_null(), true);
+        assert_eq!(bst.root.is_none(), true);
 
         // New node becomes root
         bst.put(2, "b".to_string());
@@ -212,16 +218,16 @@ mod tests {
 
         // New node becomes left node
         bst.put(1, "a".to_string());
-        if let Edge::Link(node) = &bst.root {
-            check_key(&node.borrow().left, 1);
+        if let Some(node) = &bst.root {
+            check_key(&node.get().left, 1);
         } else {
             panic!("BST must have root");
         }
 
         // New node becomes right node
         bst.put(3, "c".to_string());
-        if let Edge::Link(node) = &bst.root {
-            check_key(&node.borrow().right, 3);
+        if let Some(node) = &bst.root {
+            check_key(&node.get().right, 3);
         } else {
             panic!("BST must have root");
         }
