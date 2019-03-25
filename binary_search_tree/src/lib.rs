@@ -190,6 +190,26 @@ impl BST {
         None
     }
 
+    pub fn max(&self) -> Option<usize> {
+        if let Some(node) = BST::maximum(&self.root) {
+            return Some(node.get().key)
+        }
+
+        None
+    }
+
+    fn maximum(x: &Option<Node>) -> Option<Node> {
+        if let Some(node) = x {
+            if node.get().right.is_none() {
+                return Some(node.clone());
+            } else {
+                return BST::maximum(&node.get().right);
+            }
+        }
+
+        None
+    }
+
     pub fn keys(&self) -> Vec<usize> {
         let mut v = Vec::new();
         BST::inorder(&self.root, &mut v);
@@ -350,6 +370,17 @@ mod tests {
         assert_eq!(bst.min(), Some(3));
         bst.delete_min();
         assert_eq!(bst.min(), Some(4));
+    }
+
+    #[test]
+    fn max() {
+        let mut bst = BST::new();
+
+        assert_eq!(bst.max(), None);
+
+        populate_tree(&mut bst);
+
+        assert_eq!(bst.max(), Some(9));
     }
 
     #[test]
