@@ -43,10 +43,7 @@ impl Node {
     }
 
     pub fn size(node: &Option<Node>) -> usize {
-        match node {
-            Some(node) => node.0.borrow().size,
-            None => 0,
-        }
+        node.as_ref().map_or(0, |n| n.0.borrow().size)
     }
 }
 
@@ -123,10 +120,7 @@ impl BST {
     fn remove_min(x: &Option<Node>) -> Option<Node> {
         if let Some(node) = x {
             if node.get().left.is_none() {
-                match &node.get().right {
-                    Some(node) => return Some(node.clone()),
-                    None => return None,
-                }
+                return node.get().right.as_ref().map(|n| n.clone());
             }
             let new_node = BST::remove_min(&node.get().left);
             node.set_left(new_node);
