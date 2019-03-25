@@ -107,7 +107,7 @@ impl BST {
             node.update_size();
             return Some(node.clone());
         }
-        // x = Null
+        // x = None
         Some(Node::new(key, value))
     }
 
@@ -128,6 +128,46 @@ impl BST {
             node.update_size();
             return Some(node.clone());
         }
+        None
+    }
+
+    pub fn delete(&mut self, key: usize) {
+        self.root = BST::remove(&self.root, key);
+    }
+
+    fn remove(x: &Option<Node>, key: usize) -> Option<Node> {
+        if let Some(node) = x {
+            if key < node.get().key {
+                let new_node = BST::remove(&node.get().left, key);
+                node.set_left(new_node);
+            } else if key > node.get().key {
+                let new_node = BST::remove(&node.get().right, key);
+                node.set_right(new_node);
+            } else {
+                if node.get().right.is_none() {
+                    return node.get().left.as_ref().map(|n| n.clone());
+                }
+                if node.get().left.is_none() {
+                    return node.get().right.as_ref().map(|n| n.clone());
+                }
+
+                let temp = node.clone();
+                // minimum of the right replaces node to be deleted
+                let node = BST::minimum(&temp.get().right).unwrap();
+
+                // new node takes left and right of the deleted
+                let right = BST::remove_min(&temp.get().right);
+                node.set_right(right);
+                let left = temp.get().left.as_ref().map(|n| n.clone());
+                node.set_left(left);
+
+                node.update_size();
+                return Some(node);
+            }
+            node.update_size();
+            return Some(node.clone());
+        }
+
         None
     }
 
@@ -300,5 +340,27 @@ mod tests {
         assert_eq!(bst.min(), Some(3));
         bst.delete_min();
         assert_eq!(bst.min(), Some(4));
+    }
+
+    #[test]
+    fn delete() {
+        let mut bst = BST::new();
+
+        // delete any key of an empty BST
+        bst.delete(8);
+
+        populate_tree(&mut bst);
+        assert_eq!(bst.size(), 9);
+
+        bst.delete(3);
+        assert_eq!(bst.size(), 8);
+        assert_eq!(bst.keys(), vec![1, 2, 4, 5, 6, 7, 8, 9]);
+        if let Some(node) = &bst.root {
+            check_key(&node.get().left, 4);
+        }
+
+        bst.delete(7);
+        assert_eq!(bst.size(), 7);
+        assert_eq!(bst.keys(), vec![1, 2, 4, 5, 6, 8, 9]);
     }
 }
