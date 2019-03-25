@@ -3,15 +3,21 @@ use std::cell::RefCell;
 use std::cell::Ref;
 
 #[derive(Debug)]
-pub struct NodePtr(Rc<RefCell<Node>>);
+pub struct NodePtr(Rc<RefCell<RawNode>>);
 
 impl NodePtr {
     pub fn new(key: usize, value: String) -> Self {
-        let node = Rc::new(RefCell::new(Node::new(key, value)));
+        let node = Rc::new(RefCell::new(RawNode {
+            key,
+            value,
+            left: None,
+            right: None,
+            size: 1,
+        }));
         NodePtr(node)
     }
 
-    pub fn node(&self) -> Ref<Node> {
+    pub fn node(&self) -> Ref<RawNode> {
         self.0.borrow()
     }
 
@@ -30,27 +36,6 @@ impl NodePtr {
     pub fn clone(&self) -> Self {
         NodePtr(Rc::clone(&self.0))
     }
-}
-
-#[derive(Debug)]
-pub struct Node {
-    key: usize,
-    value: String,
-    left: Option<NodePtr>,
-    right: Option<NodePtr>,
-    size: usize,
-}
-
-impl Node {
-    pub fn new(key: usize, value: String) -> Self {
-        Node {
-            key,
-            value,
-            left: None,
-            right: None,
-            size: 1,
-        }
-    }
 
     pub fn size(node: &Option<NodePtr>) -> usize {
         match node {
@@ -58,6 +43,15 @@ impl Node {
             None => 0,
         }
     }
+}
+
+#[derive(Debug)]
+pub struct RawNode {
+    key: usize,
+    value: String,
+    left: Option<NodePtr>,
+    right: Option<NodePtr>,
+    size: usize,
 }
 
 #[derive(Debug)]
@@ -71,11 +65,11 @@ impl BST {
     }
 
     pub fn is_empty(&self) -> bool {
-        Node::size(&self.root) == 0
+        NodePtr::size(&self.root) == 0
     }
 
     pub fn size(&self) -> usize {
-        Node::size(&self.root)
+        NodePtr::size(&self.root)
     }
 
     pub fn get(&self, key: usize) -> Option<String> {
@@ -109,7 +103,7 @@ impl BST {
                 node_ptr.set_right(new_node);
             }
             // TODO: if same key, update value
-            let size = 1 + Node::size(&node_ptr.node().left) + Node::size(&node_ptr.node().right);
+            let size = 1 + NodePtr::size(&node_ptr.node().left) + NodePtr::size(&node_ptr.node().right);
             node_ptr.set_size(size);
             return Some(node_ptr.clone());
         }
@@ -131,7 +125,7 @@ impl BST {
             }
             let new_node = BST::remove_min(&node_ptr.node().left);
             node_ptr.set_left(new_node);
-            let size = 1 + Node::size(&node_ptr.node().left) + Node::size(&node_ptr.node().right);
+            let size = 1 + NodePtr::size(&node_ptr.node().left) + NodePtr::size(&node_ptr.node().right);
             node_ptr.set_size(size);
             return Some(node_ptr.clone());
         }
@@ -208,9 +202,9 @@ mod tests {
 
     #[test]
     fn create_node() {
-        let n = Node::new(1, "a".to_string());
-        assert_eq!(n.left.is_none(), true);
-        assert_eq!(n.right.is_none(), true);
+        let n = NodePtr::new(1, "a".to_string());
+        assert_eq!(n.node().left.is_none(), true);
+        assert_eq!(n.node().right.is_none(), true);
     }
 
     #[test]
