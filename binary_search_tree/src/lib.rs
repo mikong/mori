@@ -29,7 +29,8 @@ impl Node {
         self.0.borrow_mut().right = node;
     }
 
-    pub fn set_size(&self, size: usize) {
+    pub fn update_size(&self) {
+        let size = 1 + Node::size(&self.get().left) + Node::size(&self.get().right);
         self.0.borrow_mut().size = size;
     }
 
@@ -103,8 +104,7 @@ impl BST {
                 node.set_right(new_node);
             }
             // TODO: if same key, update value
-            let size = 1 + Node::size(&node.get().left) + Node::size(&node.get().right);
-            node.set_size(size);
+            node.update_size();
             return Some(node.clone());
         }
         // x = Null
@@ -125,8 +125,7 @@ impl BST {
             }
             let new_node = BST::remove_min(&node.get().left);
             node.set_left(new_node);
-            let size = 1 + Node::size(&node.get().left) + Node::size(&node.get().right);
-            node.set_size(size);
+            node.update_size();
             return Some(node.clone());
         }
         None
