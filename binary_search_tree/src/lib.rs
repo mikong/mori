@@ -3,9 +3,9 @@ use std::cell::RefCell;
 use std::cell::Ref;
 
 #[derive(Debug)]
-pub struct NodePtr(Rc<RefCell<RawNode>>);
+pub struct Node(Rc<RefCell<RawNode>>);
 
-impl NodePtr {
+impl Node {
     pub fn new(key: usize, value: String) -> Self {
         let node = Rc::new(RefCell::new(RawNode {
             key,
@@ -14,18 +14,18 @@ impl NodePtr {
             right: None,
             size: 1,
         }));
-        NodePtr(node)
+        Node(node)
     }
 
-    pub fn node(&self) -> Ref<RawNode> {
+    pub fn get(&self) -> Ref<RawNode> {
         self.0.borrow()
     }
 
-    pub fn set_left(&self, node: Option<NodePtr>) {
+    pub fn set_left(&self, node: Option<Node>) {
         self.0.borrow_mut().left = node;
     }
 
-    pub fn set_right(&self, node: Option<NodePtr>) {
+    pub fn set_right(&self, node: Option<Node>) {
         self.0.borrow_mut().right = node;
     }
 
@@ -34,10 +34,10 @@ impl NodePtr {
     }
 
     pub fn clone(&self) -> Self {
-        NodePtr(Rc::clone(&self.0))
+        Node(Rc::clone(&self.0))
     }
 
-    pub fn size(node: &Option<NodePtr>) -> usize {
+    pub fn size(node: &Option<Node>) -> usize {
         match node {
             Some(node) => node.0.borrow().size,
             None => 0,
@@ -49,14 +49,14 @@ impl NodePtr {
 pub struct RawNode {
     key: usize,
     value: String,
-    left: Option<NodePtr>,
-    right: Option<NodePtr>,
+    left: Option<Node>,
+    right: Option<Node>,
     size: usize,
 }
 
 #[derive(Debug)]
 pub struct BST {
-    root: Option<NodePtr>,
+    root: Option<Node>,
 }
 
 impl BST {
@@ -65,25 +65,25 @@ impl BST {
     }
 
     pub fn is_empty(&self) -> bool {
-        NodePtr::size(&self.root) == 0
+        Node::size(&self.root) == 0
     }
 
     pub fn size(&self) -> usize {
-        NodePtr::size(&self.root)
+        Node::size(&self.root)
     }
 
     pub fn get(&self, key: usize) -> Option<String> {
         BST::getr(&self.root, key)
     }
 
-    fn getr(x: &Option<NodePtr>, key: usize) -> Option<String> {
-        if let Some(node_ptr) = x {
-            if key < node_ptr.node().key {
-                return BST::getr(&node_ptr.node().left, key);
-            } else if key > node_ptr.node().key {
-                return BST::getr(&node_ptr.node().right, key);
+    fn getr(x: &Option<Node>, key: usize) -> Option<String> {
+        if let Some(node) = x {
+            if key < node.get().key {
+                return BST::getr(&node.get().left, key);
+            } else if key > node.get().key {
+                return BST::getr(&node.get().right, key);
             } else {
-                return Some(node_ptr.node().value.clone());
+                return Some(node.get().value.clone());
             }
         }
         None
@@ -93,59 +93,59 @@ impl BST {
         self.root = BST::insert(&self.root, key, value);
     }
 
-    fn insert(x: &Option<NodePtr>, key: usize, value: String) -> Option<NodePtr> {
-        if let Some(node_ptr) = x {
-            if key < node_ptr.node().key {
-                let new_node = BST::insert(&node_ptr.node().left, key, value);
-                node_ptr.set_left(new_node);
-            } else if key > node_ptr.node().key {
-                let new_node = BST::insert(&node_ptr.node().right, key, value);
-                node_ptr.set_right(new_node);
+    fn insert(x: &Option<Node>, key: usize, value: String) -> Option<Node> {
+        if let Some(node) = x {
+            if key < node.get().key {
+                let new_node = BST::insert(&node.get().left, key, value);
+                node.set_left(new_node);
+            } else if key > node.get().key {
+                let new_node = BST::insert(&node.get().right, key, value);
+                node.set_right(new_node);
             }
             // TODO: if same key, update value
-            let size = 1 + NodePtr::size(&node_ptr.node().left) + NodePtr::size(&node_ptr.node().right);
-            node_ptr.set_size(size);
-            return Some(node_ptr.clone());
+            let size = 1 + Node::size(&node.get().left) + Node::size(&node.get().right);
+            node.set_size(size);
+            return Some(node.clone());
         }
         // x = Null
-        Some(NodePtr::new(key, value))
+        Some(Node::new(key, value))
     }
 
     pub fn delete_min(&mut self) {
         self.root = BST::remove_min(&self.root);
     }
 
-    fn remove_min(x: &Option<NodePtr>) -> Option<NodePtr> {
-        if let Some(node_ptr) = x {
-            if node_ptr.node().left.is_none() {
-                match &node_ptr.node().right {
-                    Some(node_ptr) => return Some(node_ptr.clone()),
+    fn remove_min(x: &Option<Node>) -> Option<Node> {
+        if let Some(node) = x {
+            if node.get().left.is_none() {
+                match &node.get().right {
+                    Some(node) => return Some(node.clone()),
                     None => return None,
                 }
             }
-            let new_node = BST::remove_min(&node_ptr.node().left);
-            node_ptr.set_left(new_node);
-            let size = 1 + NodePtr::size(&node_ptr.node().left) + NodePtr::size(&node_ptr.node().right);
-            node_ptr.set_size(size);
-            return Some(node_ptr.clone());
+            let new_node = BST::remove_min(&node.get().left);
+            node.set_left(new_node);
+            let size = 1 + Node::size(&node.get().left) + Node::size(&node.get().right);
+            node.set_size(size);
+            return Some(node.clone());
         }
         None
     }
 
     pub fn min(&self) -> Option<usize> {
-        if let Some(node_ptr) = BST::minimum(&self.root) {
-            return Some(node_ptr.node().key)
+        if let Some(node) = BST::minimum(&self.root) {
+            return Some(node.get().key)
         }
 
         None
     }
 
-    fn minimum(x: &Option<NodePtr>) -> Option<NodePtr> {
-        if let Some(node_ptr) = x {
-            if node_ptr.node().left.is_none() {
-                return Some(node_ptr.clone());
+    fn minimum(x: &Option<Node>) -> Option<Node> {
+        if let Some(node) = x {
+            if node.get().left.is_none() {
+                return Some(node.clone());
             } else {
-                return BST::minimum(&node_ptr.node().left);
+                return BST::minimum(&node.get().left);
             }
         }
 
@@ -158,11 +158,11 @@ impl BST {
         v
     }
 
-    fn inorder(x: &Option<NodePtr>, v: &mut Vec<usize>) {
-        if let Some(node_ptr) = x {
-            BST::inorder(&node_ptr.node().left, v);
-            v.push(node_ptr.node().key);
-            BST::inorder(&node_ptr.node().right, v);
+    fn inorder(x: &Option<Node>, v: &mut Vec<usize>) {
+        if let Some(node) = x {
+            BST::inorder(&node.get().left, v);
+            v.push(node.get().key);
+            BST::inorder(&node.get().right, v);
         }
     }
 }
@@ -171,9 +171,9 @@ impl BST {
 mod tests {
     use super::*;
 
-    fn check_key(cell: &Option<NodePtr>, key: usize) {
-        if let Some(node_ptr) = cell {
-            assert_eq!(node_ptr.node().key, key);
+    fn check_key(cell: &Option<Node>, key: usize) {
+        if let Some(node) = cell {
+            assert_eq!(node.get().key, key);
         } else {
             panic!("Node can't be None");
         }
@@ -202,9 +202,9 @@ mod tests {
 
     #[test]
     fn create_node() {
-        let n = NodePtr::new(1, "a".to_string());
-        assert_eq!(n.node().left.is_none(), true);
-        assert_eq!(n.node().right.is_none(), true);
+        let n = Node::new(1, "a".to_string());
+        assert_eq!(n.get().left.is_none(), true);
+        assert_eq!(n.get().right.is_none(), true);
     }
 
     #[test]
@@ -218,16 +218,16 @@ mod tests {
 
         // New node becomes left node
         bst.put(1, "a".to_string());
-        if let Some(node_ptr) = &bst.root {
-            check_key(&node_ptr.node().left, 1);
+        if let Some(node) = &bst.root {
+            check_key(&node.get().left, 1);
         } else {
             panic!("BST must have root");
         }
 
         // New node becomes right node
         bst.put(3, "c".to_string());
-        if let Some(node_ptr) = &bst.root {
-            check_key(&node_ptr.node().right, 3);
+        if let Some(node) = &bst.root {
+            check_key(&node.get().right, 3);
         } else {
             panic!("BST must have root");
         }
