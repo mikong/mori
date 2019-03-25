@@ -26,6 +26,10 @@ impl NodePtr {
     pub fn set_size(&self, size: usize) {
         self.0.borrow_mut().size = size;
     }
+
+    pub fn clone(&self) -> Self {
+        NodePtr(Rc::clone(&self.0))
+    }
 }
 
 #[derive(Debug)]
@@ -107,7 +111,7 @@ impl BST {
             // TODO: if same key, update value
             let size = 1 + Node::size(&node_ptr.node().left) + Node::size(&node_ptr.node().right);
             node_ptr.set_size(size);
-            return Some(NodePtr(Rc::clone(&node_ptr.0)));
+            return Some(node_ptr.clone());
         }
         // x = Null
         Some(NodePtr::new(key, value))
@@ -121,7 +125,7 @@ impl BST {
         if let Some(node_ptr) = x {
             if node_ptr.node().left.is_none() {
                 match &node_ptr.node().right {
-                    Some(node) => return Some(NodePtr(Rc::clone(&node.0))),
+                    Some(node_ptr) => return Some(node_ptr.clone()),
                     None => return None,
                 }
             }
@@ -129,7 +133,7 @@ impl BST {
             node_ptr.set_left(new_node);
             let size = 1 + Node::size(&node_ptr.node().left) + Node::size(&node_ptr.node().right);
             node_ptr.set_size(size);
-            return Some(NodePtr(Rc::clone(&node_ptr.0)));
+            return Some(node_ptr.clone());
         }
         None
     }
@@ -145,7 +149,7 @@ impl BST {
     fn minimum(x: &Option<NodePtr>) -> Option<NodePtr> {
         if let Some(node_ptr) = x {
             if node_ptr.node().left.is_none() {
-                return Some(NodePtr(Rc::clone(&node_ptr.0)));
+                return Some(node_ptr.clone());
             } else {
                 return BST::minimum(&node_ptr.node().left);
             }
