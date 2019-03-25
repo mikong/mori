@@ -21,6 +21,10 @@ impl Node {
         self.0.borrow()
     }
 
+    pub fn set_value(&self, value: String) {
+        self.0.borrow_mut().value = value;
+    }
+
     pub fn set_left(&self, node: Option<Node>) {
         self.0.borrow_mut().left = node;
     }
@@ -91,19 +95,20 @@ impl BST {
     }
 
     pub fn put(&mut self, key: usize, value: String) {
-        self.root = BST::insert(&self.root, key, value);
+        self.root = BST::upsert(&self.root, key, value);
     }
 
-    fn insert(x: &Option<Node>, key: usize, value: String) -> Option<Node> {
+    fn upsert(x: &Option<Node>, key: usize, value: String) -> Option<Node> {
         if let Some(node) = x {
             if key < node.get().key {
-                let new_node = BST::insert(&node.get().left, key, value);
+                let new_node = BST::upsert(&node.get().left, key, value);
                 node.set_left(new_node);
             } else if key > node.get().key {
-                let new_node = BST::insert(&node.get().right, key, value);
+                let new_node = BST::upsert(&node.get().right, key, value);
                 node.set_right(new_node);
+            } else {
+                node.set_value(value);
             }
-            // TODO: if same key, update value
             node.update_size();
             return Some(node.clone());
         }
@@ -270,6 +275,17 @@ mod tests {
         } else {
             panic!("BST must have root");
         }
+    }
+
+    #[test]
+    fn update() {
+        let mut bst = BST::new();
+        populate_tree(&mut bst);
+
+        assert_eq!(bst.get(5), Some("H".to_string()));
+        bst.put(5, "I".to_string());
+        assert_eq!(bst.get(5), Some("I".to_string()));
+        assert_eq!(bst.size(), 9);
     }
 
     #[test]
