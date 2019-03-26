@@ -62,18 +62,22 @@ pub struct BST {
 }
 
 impl BST {
+    /// Creates a new empty Binary Search Tree.
     pub fn new() -> Self {
         BST { root: None }
     }
 
+    /// Returns `true` if the tree has no node elements.
     pub fn is_empty(&self) -> bool {
         Node::size(&self.root) == 0
     }
 
+    /// Returns the number of elements in the tree.
     pub fn size(&self) -> usize {
         Node::size(&self.root)
     }
 
+    /// Returns a clone of the value associated with the given key.
     pub fn get(&self, key: usize) -> Option<String> {
         BST::getr(&self.root, key)
     }
@@ -91,6 +95,8 @@ impl BST {
         None
     }
 
+    /// Inserts the given key-value pair into the tree. If the tree already
+    /// contains the given key, the associated value is updated.
     pub fn put(&mut self, key: usize, value: String) {
         self.root = BST::upsert(&self.root, key, value);
     }
