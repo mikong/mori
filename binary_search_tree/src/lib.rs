@@ -130,6 +130,23 @@ impl BST {
         None
     }
 
+    pub fn delete_max(&mut self) {
+        self.root = BST::remove_max(&self.root);
+    }
+
+    fn remove_max(x: &Option<Node>) -> Option<Node> {
+        if let Some(node) = x {
+            if node.get().right.is_none() {
+                return node.get().left.as_ref().map(|n| n.clone());
+            }
+            let new_node = BST::remove_max(&node.get().right);
+            node.set_right(new_node);
+            node.update_size();
+            return Some(node.clone());
+        }
+        None
+    }
+
     pub fn delete(&mut self, key: usize) {
         self.root = BST::remove(&self.root, key);
     }
@@ -339,7 +356,7 @@ mod tests {
     }
 
     #[test]
-    fn remove_min() {
+    fn delete_min() {
         let mut bst = BST::new();
 
         // delete min an empty BST
@@ -353,6 +370,23 @@ mod tests {
         assert_eq!(bst.keys(), vec![3, 4, 5, 6, 7, 8, 9]);
         bst.delete_min();
         assert_eq!(bst.keys(), vec![4, 5, 6, 7, 8, 9]);
+    }
+
+    #[test]
+    fn delete_max() {
+        let mut bst = BST::new();
+
+        // delete max an empty BST
+        bst.delete_max();
+
+        populate_tree(&mut bst);
+
+        bst.delete_max();
+        assert_eq!(bst.keys(), vec![1, 2, 3, 4, 5, 6, 7, 8]);
+        bst.delete_max();
+        assert_eq!(bst.keys(), vec![1, 2, 3, 4, 5, 6, 7]);
+        bst.delete_max();
+        assert_eq!(bst.keys(), vec![1, 2, 3, 4, 5, 6]);
     }
 
     #[test]
