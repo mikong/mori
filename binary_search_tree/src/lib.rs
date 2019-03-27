@@ -80,15 +80,15 @@ impl BST {
 
     /// Returns a clone of the value associated with the given key.
     pub fn get(&self, key: usize) -> Option<String> {
-        BST::getr(&self.root, key)
+        BST::get_value(&self.root, key)
     }
 
-    fn getr(x: &Option<Node>, key: usize) -> Option<String> {
+    fn get_value(x: &Option<Node>, key: usize) -> Option<String> {
         if let Some(node) = x {
             if key < node.get().key {
-                return BST::getr(&node.get().left, key);
+                return BST::get_value(&node.get().left, key);
             } else if key > node.get().key {
-                return BST::getr(&node.get().right, key);
+                return BST::get_value(&node.get().right, key);
             } else {
                 return Some(node.get().value.clone());
             }
