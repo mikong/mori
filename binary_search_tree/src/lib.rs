@@ -119,6 +119,7 @@ impl BST {
         Some(Node::new(key, value))
     }
 
+    /// Removes the smallest key and its associated value from the tree.
     pub fn delete_min(&mut self) {
         self.root = BST::remove_min(&self.root);
     }
@@ -136,6 +137,7 @@ impl BST {
         None
     }
 
+    /// Removes the largest key and its associated value from the tree.
     pub fn delete_max(&mut self) {
         self.root = BST::remove_max(&self.root);
     }
@@ -153,6 +155,7 @@ impl BST {
         None
     }
 
+    /// Removes the given key and its associated value from the tree.
     pub fn delete(&mut self, key: usize) {
         self.root = BST::remove(&self.root, key);
     }
@@ -193,6 +196,7 @@ impl BST {
         None
     }
 
+    /// Returns the smallest key in the tree.
     pub fn min(&self) -> Option<usize> {
         if let Some(node) = BST::minimum(&self.root) {
             return Some(node.get().key)
@@ -213,6 +217,7 @@ impl BST {
         None
     }
 
+    /// Returns the largest key in the tree.
     pub fn max(&self) -> Option<usize> {
         if let Some(node) = BST::maximum(&self.root) {
             return Some(node.get().key)
