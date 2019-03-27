@@ -1,6 +1,7 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::cell::Ref;
+use std::collections::VecDeque;
 
 #[derive(Debug)]
 pub struct Node(Rc<RefCell<RawNode>>);
@@ -251,6 +252,25 @@ impl BST {
             BST::inorder(&node.get().right, v);
         }
     }
+
+    pub fn level_order(&self) -> Vec<usize> {
+        let mut keys = Vec::new();
+        let mut queue = VecDeque::new();
+        if let Some(node) = &self.root {
+            queue.push_back(node.clone());
+        }
+        while !queue.is_empty() {
+            let node = queue.pop_front().unwrap();
+            keys.push(node.get().key);
+            if let Some(n) = &node.get().left {
+                queue.push_back(n.clone());
+            };
+            if let Some(n) = &node.get().right {
+                queue.push_back(n.clone());
+            };
+        }
+        keys
+    }
 }
 
 #[cfg(test)]
@@ -351,6 +371,15 @@ mod tests {
 
         assert_eq!(bst.keys().len(), 9);
         assert_eq!(bst.keys(), vec![1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    }
+
+    #[test]
+    fn levelorder_traversal() {
+        let mut bst = BST::new();
+        populate_tree(&mut bst);
+
+        assert_eq!(bst.level_order().len(), 9);
+        assert_eq!(bst.level_order(), vec![8, 3, 9, 1, 7, 2, 5, 4, 6]);
     }
 
     #[test]
