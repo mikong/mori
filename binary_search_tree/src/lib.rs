@@ -4,10 +4,10 @@ use std::cell::Ref;
 use std::collections::VecDeque;
 
 #[derive(Debug)]
-pub struct Node(Rc<RefCell<RawNode>>);
+pub struct Node<V: Clone>(Rc<RefCell<RawNode<V>>>);
 
-impl Node {
-    pub fn new(key: usize, value: String) -> Self {
+impl<V: Clone> Node<V> {
+    pub fn new(key: usize, value: V) -> Self {
         let node = Rc::new(RefCell::new(RawNode {
             key,
             value,
@@ -18,19 +18,19 @@ impl Node {
         Node(node)
     }
 
-    pub fn get(&self) -> Ref<RawNode> {
+    pub fn get(&self) -> Ref<RawNode<V>> {
         self.0.borrow()
     }
 
-    pub fn set_value(&self, value: String) {
+    pub fn set_value(&self, value: V) {
         self.0.borrow_mut().value = value;
     }
 
-    pub fn set_left(&self, node: Option<Node>) {
+    pub fn set_left(&self, node: Option<Node<V>>) {
         self.0.borrow_mut().left = node;
     }
 
-    pub fn set_right(&self, node: Option<Node>) {
+    pub fn set_right(&self, node: Option<Node<V>>) {
         self.0.borrow_mut().right = node;
     }
 
@@ -43,26 +43,26 @@ impl Node {
         Node(Rc::clone(&self.0))
     }
 
-    pub fn size(node: &Option<Node>) -> usize {
+    pub fn size(node: &Option<Node<V>>) -> usize {
         node.as_ref().map_or(0, |n| n.0.borrow().size)
     }
 }
 
 #[derive(Debug)]
-pub struct RawNode {
+pub struct RawNode<V: Clone> {
     key: usize,
-    value: String,
-    left: Option<Node>,
-    right: Option<Node>,
+    value: V,
+    left: Option<Node<V>>,
+    right: Option<Node<V>>,
     size: usize,
 }
 
 #[derive(Debug)]
-pub struct BST {
-    root: Option<Node>,
+pub struct BST<V: Clone> {
+    root: Option<Node<V>>,
 }
 
-impl BST {
+impl<V: Clone> BST<V> {
     /// Creates a new empty Binary Search Tree.
     pub fn new() -> Self {
         BST { root: None }
@@ -79,11 +79,11 @@ impl BST {
     }
 
     /// Returns a clone of the value associated with the given key.
-    pub fn get(&self, key: usize) -> Option<String> {
+    pub fn get(&self, key: usize) -> Option<V> {
         BST::get_value(&self.root, key)
     }
 
-    fn get_value(x: &Option<Node>, key: usize) -> Option<String> {
+    fn get_value(x: &Option<Node<V>>, key: usize) -> Option<V> {
         if let Some(node) = x {
             if key < node.get().key {
                 return BST::get_value(&node.get().left, key);
@@ -98,11 +98,11 @@ impl BST {
 
     /// Inserts the given key-value pair into the tree. If the tree already
     /// contains the given key, the associated value is updated.
-    pub fn put(&mut self, key: usize, value: String) {
+    pub fn put(&mut self, key: usize, value: V) {
         self.root = BST::upsert(&self.root, key, value);
     }
 
-    fn upsert(x: &Option<Node>, key: usize, value: String) -> Option<Node> {
+    fn upsert(x: &Option<Node<V>>, key: usize, value: V) -> Option<Node<V>> {
         if let Some(node) = x {
             if key < node.get().key {
                 let new_node = BST::upsert(&node.get().left, key, value);
@@ -125,7 +125,7 @@ impl BST {
         self.root = BST::remove_min(&self.root);
     }
 
-    fn remove_min(x: &Option<Node>) -> Option<Node> {
+    fn remove_min(x: &Option<Node<V>>) -> Option<Node<V>> {
         if let Some(node) = x {
             if node.get().left.is_none() {
                 return node.get().right.as_ref().map(|n| n.clone());
@@ -143,7 +143,7 @@ impl BST {
         self.root = BST::remove_max(&self.root);
     }
 
-    fn remove_max(x: &Option<Node>) -> Option<Node> {
+    fn remove_max(x: &Option<Node<V>>) -> Option<Node<V>> {
         if let Some(node) = x {
             if node.get().right.is_none() {
                 return node.get().left.as_ref().map(|n| n.clone());
@@ -161,7 +161,7 @@ impl BST {
         self.root = BST::remove(&self.root, key);
     }
 
-    fn remove(x: &Option<Node>, key: usize) -> Option<Node> {
+    fn remove(x: &Option<Node<V>>, key: usize) -> Option<Node<V>> {
         if let Some(node) = x {
             if key < node.get().key {
                 let new_node = BST::remove(&node.get().left, key);
@@ -206,7 +206,7 @@ impl BST {
         None
     }
 
-    fn minimum(x: &Option<Node>) -> Option<Node> {
+    fn minimum(x: &Option<Node<V>>) -> Option<Node<V>> {
         if let Some(node) = x {
             if node.get().left.is_none() {
                 return Some(node.clone());
@@ -227,7 +227,7 @@ impl BST {
         None
     }
 
-    fn maximum(x: &Option<Node>) -> Option<Node> {
+    fn maximum(x: &Option<Node<V>>) -> Option<Node<V>> {
         if let Some(node) = x {
             if node.get().right.is_none() {
                 return Some(node.clone());
@@ -245,7 +245,7 @@ impl BST {
         v
     }
 
-    fn inorder(x: &Option<Node>, v: &mut Vec<usize>) {
+    fn inorder(x: &Option<Node<V>>, v: &mut Vec<usize>) {
         if let Some(node) = x {
             BST::inorder(&node.get().left, v);
             v.push(node.get().key);
@@ -277,7 +277,7 @@ impl BST {
 mod tests {
     use super::*;
 
-    fn check_key(cell: &Option<Node>, key: usize) {
+    fn check_key(cell: &Option<Node<String>>, key: usize) {
         if let Some(node) = cell {
             assert_eq!(node.get().key, key);
         } else {
@@ -294,7 +294,7 @@ mod tests {
     //    2(C) 5(H)
     //        /   \
     //      4(G)  6(M)
-    fn populate_tree(bst: &mut BST) {
+    fn populate_tree(bst: &mut BST<String>) {
         bst.put(8, "S".to_string());
         bst.put(3, "E".to_string());
         bst.put(1, "A".to_string());
