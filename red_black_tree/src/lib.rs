@@ -89,6 +89,24 @@ impl<K, V> RedBlackTree<K, V>
 
         Some(new)
     }
+
+    fn flip_colors(&mut self, node: &Option<NodeId>) {
+        let node = node.unwrap();
+        let left = self.nodes[node].left.unwrap();
+        let right = self.nodes[node].right.unwrap();
+        match self.nodes[node].color {
+            Color::Red => {
+                self.nodes[node].color = Color::Black;
+                self.nodes[left].color = Color::Red;
+                self.nodes[right].color = Color::Red;
+            },
+            Color::Black => {
+                self.nodes[node].color = Color::Red;
+                self.nodes[left].color = Color::Black;
+                self.nodes[right].color = Color::Black;
+            },
+        };
+    }
 }
 
 #[cfg(test)]
