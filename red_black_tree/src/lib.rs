@@ -10,9 +10,14 @@ pub struct Node<K, V>
 {
     key: K,
     value: V,
-    left: Option<Box<Node<K, V>>>,
-    right: Option<Box<Node<K, V>>>,
+    left: Option<NodeId>,
+    right: Option<NodeId>,
     color: Color,
+}
+
+#[derive(Debug)]
+pub struct NodeId {
+    index: usize,
 }
 
 impl<K, V> Node<K, V>
@@ -33,23 +38,24 @@ impl<K, V> Node<K, V>
 pub struct RedBlackTree<K, V>
     where K: PartialOrd
 {
-    root: Option<Box<Node<K, V>>>,
+    root: Option<NodeId>,
+    nodes: Vec<Node<K, V>>,
 }
 
 impl<K, V> RedBlackTree<K, V>
     where K: PartialOrd
 {
     pub fn new() -> Self {
-        RedBlackTree { root: None }
+        RedBlackTree {
+            root: None,
+            nodes: Vec::new(),
+        }
     }
 
     pub fn get(&self, key: K) -> Option<&V> {
-        RedBlackTree::get_value(&self.root, key)
-    }
-
-    fn get_value(x: &Option<Box<Node<K, V>>>, key: K) -> Option<&V> {
-        let mut x = x;
-        while let Some(node) = x {
+        let mut x = &self.root;
+        while let Some(node_id) = x {
+            let node = &self.nodes[node_id.index];
             if key < node.key {
                 x = &node.left;
             } else if key > node.key {
