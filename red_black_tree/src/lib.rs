@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Color {
     Red,
     Black,
@@ -15,10 +15,7 @@ pub struct Node<K, V>
     color: Color,
 }
 
-#[derive(Debug)]
-pub struct NodeId {
-    index: usize,
-}
+type NodeId = usize;
 
 impl<K, V> Node<K, V>
     where K: PartialOrd
@@ -55,7 +52,7 @@ impl<K, V> RedBlackTree<K, V>
     pub fn get(&self, key: K) -> Option<&V> {
         let mut x = &self.root;
         while let Some(node_id) = x {
-            let node = &self.nodes[node_id.index];
+            let node = &self.nodes[*node_id];
             if key < node.key {
                 x = &node.left;
             } else if key > node.key {
@@ -65,6 +62,32 @@ impl<K, V> RedBlackTree<K, V>
             }
         }
         None
+    }
+
+    // Helper methods
+
+    fn rotate_left(&mut self, parent: &Option<NodeId>) -> Option<NodeId> {
+        let old = parent.unwrap();
+        let new = self.nodes[old].right.unwrap();
+
+        self.nodes[old].right = self.nodes[new].left;
+        self.nodes[new].left = Some(old);
+        self.nodes[new].color = self.nodes[old].color;
+        self.nodes[old].color = Color::Red;
+
+        Some(new)
+    }
+
+    fn rotate_right(&mut self, parent: &Option<NodeId>) -> Option<NodeId> {
+        let old = parent.unwrap();
+        let new = self.nodes[old].left.unwrap();
+
+        self.nodes[old].left = self.nodes[new].right;
+        self.nodes[new].right = Some(old);
+        self.nodes[new].color = self.nodes[old].color;
+        self.nodes[old].color = Color::Red;
+
+        Some(new)
     }
 }
 
