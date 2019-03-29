@@ -138,7 +138,7 @@ impl<K, V> RedBlackTree<K, V>
         Some(node_id)
     }
 
-    // Helper methods
+    // Red-black tree helper methods
 
     fn rotate_left(&mut self, parent: NodeId) -> NodeId {
         let old = parent;
@@ -189,6 +189,38 @@ impl<K, V> RedBlackTree<K, V>
         match node {
             Some(node) => self.nodes[node].color == Color::Red,
             None => false,
+        }
+    }
+
+    // Ordered symbol table methods
+
+    pub fn min(&self) -> Option<&K> {
+        if let Some(root_id) = self.root {
+            let min_id = self.rmin(root_id);
+            return Some(&self.nodes[min_id].key);
+        }
+        None
+    }
+
+    fn rmin(&self, node: NodeId) -> NodeId {
+        match self.nodes[node].left {
+            Some(node_id) => self.rmin(node_id),
+            None => node,
+        }
+    }
+
+    pub fn max(&self) -> Option<&K> {
+        if let Some(root_id) = self.root {
+            let max_id = self.rmax(root_id);
+            return Some(&self.nodes[max_id].key);
+        }
+        None
+    }
+
+    fn rmax(&self, node: NodeId) -> NodeId {
+        match self.nodes[node].right {
+            Some(node_id) => self.rmax(node_id),
+            None => node,
         }
     }
 }
@@ -287,5 +319,27 @@ mod tests {
 
         assert_eq!(tree.is_empty(), false);
         assert_eq!(tree.size(), 6);
+    }
+
+    #[test]
+    fn min() {
+        let mut tree = RedBlackTree::new();
+
+        assert_eq!(tree.min(), None);
+
+        populate_tree(&mut tree);
+
+        assert_eq!(tree.min(), Some(&"A".to_string()));
+    }
+
+    #[test]
+    fn max() {
+        let mut tree = RedBlackTree::new();
+
+        assert_eq!(tree.max(), None);
+
+        populate_tree(&mut tree);
+
+        assert_eq!(tree.max(), Some(&"S".to_string()));
     }
 }
