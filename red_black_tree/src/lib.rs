@@ -191,13 +191,38 @@ mod tests {
     #[test]
     fn put() {
         let mut tree = RedBlackTree::new();
-        tree.put("A".to_string(), 8);
-        tree.put("C".to_string(), 4);
+
         tree.put("E".to_string(), 12);
 
+        // check root is black
         let root_id = tree.root.unwrap();
         let root = &tree.nodes[root_id];
-        assert_eq!(root.key, "C".to_string());
+        assert_eq!(root.color, Color::Black);
+
+        //   E           S
+        //    \   ->    /
+        //     S       E
+        tree.put("S".to_string(), 0);
+
+        // check left-rotate of right-leaning link
+        let root_id = tree.root.unwrap();
+        let root = &tree.nodes[root_id];
+        let left_id = root.left.unwrap();
+        let left = &tree.nodes[left_id];
+        assert_eq!(left.key, "E".to_string());
+        assert_eq!(left.color, Color::Red);
+
+        //      S
+        //     /          E
+        //    E    ->    / \
+        //   /          A   S
+        //  A
+        tree.put("A".to_string(), 8);
+
+        // check right-rotate then color-flip
+        let root_id = tree.root.unwrap();
+        let root = &tree.nodes[root_id];
+        assert_eq!(root.key, "E".to_string());
         assert_eq!(root.color, Color::Black);
 
         let left_id = root.left.unwrap();
@@ -207,7 +232,7 @@ mod tests {
 
         let right_id = root.right.unwrap();
         let right = &tree.nodes[right_id];
-        assert_eq!(right.key, "E".to_string());
+        assert_eq!(right.key, "S".to_string());
         assert_eq!(right.color, Color::Black);
     }
 }
