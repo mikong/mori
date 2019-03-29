@@ -13,6 +13,7 @@ pub struct Node<K, V>
     left: Option<NodeId>,
     right: Option<NodeId>,
     color: Color,
+    size: usize,
 }
 
 type NodeId = usize;
@@ -27,6 +28,7 @@ impl<K, V> Node<K, V>
             left: None,
             right: None,
             color,
+            size: 1,
         }
     }
 }
@@ -47,6 +49,24 @@ impl<K, V> RedBlackTree<K, V>
             root: None,
             nodes: Vec::new(),
         }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.root.is_none()
+    }
+
+    pub fn size(&self) -> usize {
+        self.size_of(self.root)
+    }
+
+    fn size_of(&self, node: Option<NodeId>) -> usize {
+        node.map_or(0, |id| self.nodes[id].size)
+    }
+
+    fn update_size_for(&mut self, parent: NodeId) {
+        let left_size = self.size_of(self.nodes[parent].left);
+        let right_size = self.size_of(self.nodes[parent].right);
+        self.nodes[parent].size = 1 + left_size + right_size;
     }
 
     fn new_node(&mut self, key: K, value: V, color: Color) -> NodeId {
@@ -109,6 +129,8 @@ impl<K, V> RedBlackTree<K, V>
                 self.flip_colors(node_id);
             }
 
+            self.update_size_for(node_id);
+
             return Some(node_id);
         }
 
@@ -126,6 +148,8 @@ impl<K, V> RedBlackTree<K, V>
         self.nodes[new].left = Some(old);
         self.nodes[new].color = self.nodes[old].color;
         self.nodes[old].color = Color::Red;
+        self.nodes[new].size = self.nodes[old].size;
+        self.update_size_for(old);
 
         new
     }
@@ -138,6 +162,8 @@ impl<K, V> RedBlackTree<K, V>
         self.nodes[new].right = Some(old);
         self.nodes[new].color = self.nodes[old].color;
         self.nodes[old].color = Color::Red;
+        self.nodes[new].size = self.nodes[old].size;
+        self.update_size_for(old);
 
         new
     }
@@ -170,6 +196,20 @@ impl<K, V> RedBlackTree<K, V>
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    //      E
+    //     / \
+    //    A   R
+    //   /   / \
+    //  C   H   S
+    fn populate_tree(tree: &mut RedBlackTree<String, usize>) {
+        tree.put("S".to_string(), 0);
+        tree.put("E".to_string(), 12);
+        tree.put("A".to_string(), 8);
+        tree.put("R".to_string(), 3);
+        tree.put("C".to_string(), 4);
+        tree.put("H".to_string(), 5);
+    }
 
     #[test]
     fn create_node() {
@@ -234,5 +274,18 @@ mod tests {
         let right = &tree.nodes[right_id];
         assert_eq!(right.key, "S".to_string());
         assert_eq!(right.color, Color::Black);
+    }
+
+    #[test]
+    fn tree_size() {
+        let mut tree = RedBlackTree::new();
+
+        assert_eq!(tree.is_empty(), true);
+        assert_eq!(tree.size(), 0);
+
+        populate_tree(&mut tree);
+
+        assert_eq!(tree.is_empty(), false);
+        assert_eq!(tree.size(), 6);
     }
 }
