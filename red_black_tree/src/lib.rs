@@ -138,6 +138,41 @@ impl<K, V> RedBlackTree<K, V>
         Some(node_id)
     }
 
+    pub fn delete_min(&mut self) {
+        if let Some(root_id) = self.root {
+            let left_is_red = self.is_red(self.nodes[root_id].left);
+            let right_is_red = self.is_red(self.nodes[root_id].right);
+            if !left_is_red && !right_is_red {
+                self.nodes[root_id].color = Color::Red;
+            }
+
+            self.root = self.rdelete_min(root_id);
+            if let Some(root_id) = self.root {
+                self.nodes[root_id].color = Color::Black;
+            }
+        }
+    }
+
+    fn rdelete_min(&mut self, node: NodeId) -> Option<NodeId> {
+        let mut node_id = node;
+        if self.nodes[node_id].left.is_none() {
+            return None;
+        }
+
+        if !self.is_red(self.nodes[node_id].left) {
+            let left_id = self.nodes[node_id].left.unwrap();
+            if !self.is_red(self.nodes[left_id].left) {
+                node_id = self.move_red_left(node_id);
+            }
+        }
+
+        // Note: left can't be None, even with move_red_left operation
+        let left_id = self.nodes[node_id].left.unwrap();
+        self.nodes[node_id].left = self.rdelete_min(left_id);
+
+        Some(self.balance(node_id))
+    }
+
     // Red-black tree helper methods
 
     fn rotate_left(&mut self, parent: NodeId) -> NodeId {
@@ -190,6 +225,45 @@ impl<K, V> RedBlackTree<K, V>
             Some(node) => self.nodes[node].color == Color::Red,
             None => false,
         }
+    }
+
+    fn move_red_left(&mut self, node: NodeId) -> NodeId {
+        let mut node_id = node;
+        self.flip_colors(node_id);
+
+        if let Some(right_id) = self.nodes[node_id].right {
+            if self.is_red(self.nodes[right_id].left) {
+                self.nodes[node_id].right = Some(self.rotate_right(right_id));
+                node_id = self.rotate_left(node_id);
+                self.flip_colors(node_id);
+            }
+        }
+
+        node_id
+    }
+
+    fn balance(&mut self, node: NodeId) -> NodeId {
+        let mut node_id = node;
+
+        if self.is_red(self.nodes[node_id].right) {
+            node_id = self.rotate_left(node_id);
+        }
+
+        if self.is_red(self.nodes[node_id].left) {
+            let left_id = self.nodes[node_id].left.unwrap();
+            if self.is_red(self.nodes[left_id].left) {
+                node_id = self.rotate_right(node_id);
+            }
+        }
+
+        let left_is_red = self.is_red(self.nodes[node_id].left);
+        let right_is_red = self.is_red(self.nodes[node_id].right);
+        if left_is_red && right_is_red {
+            self.flip_colors(node_id);
+        }
+
+        self.update_size_for(node_id);
+        node_id
     }
 
     // Ordered symbol table methods
@@ -306,6 +380,79 @@ mod tests {
         let right = &tree.nodes[right_id];
         assert_eq!(right.key, "S".to_string());
         assert_eq!(right.color, Color::Black);
+    }
+
+    #[test]
+    fn delete_min() {
+        // Case: Empty RBT
+        let mut tree0: RedBlackTree<String, usize> = RedBlackTree::new();
+        tree0.delete_min();
+
+        // Case: Delete from 2-node and 1-node tree
+        let mut tree2 = RedBlackTree::new();
+
+        //    S
+        //   /
+        //  E
+        //
+        let e = "E".to_string();
+        let s = "S".to_string();
+        tree2.put(s.clone(), 1);
+        tree2.put(e.clone(), 2);
+        tree2.delete_min();
+        assert_eq!(tree2.get(e), None);
+        assert_eq!(tree2.min(), Some(&s));
+        let root_id = tree2.root.unwrap();
+        let root = &tree2.nodes[root_id];
+        assert_eq!(root.color, Color::Black);
+        tree2.delete_min();
+        assert_eq!(tree2.root, None);
+
+        // Case: balanced 7-node tree with black links
+        let mut tree7 = RedBlackTree::new();
+
+        //        L
+        //      /   \
+        //     H     T
+        //    / \   / \
+        //   D   J P   X
+        //
+        tree7.put("L".to_string(), 1);
+        tree7.put("H".to_string(), 2);
+        tree7.put("T".to_string(), 3);
+        tree7.put("P".to_string(), 4);
+        tree7.put("X".to_string(), 5);
+        tree7.put("D".to_string(), 6);
+        tree7.put("J".to_string(), 7);
+        tree7.delete_min();
+
+        //        T
+        //      //  \
+        //      L    X
+        //     / \
+        //    J   P     Legend:  / - black link
+        //   //                 // - red link
+        //   H
+        //
+        let root_id = tree7.root.unwrap();
+        let root = &tree7.nodes[root_id];
+        assert_eq!(root.key, "T".to_string());
+        let left_id = root.left.unwrap();
+        let left = &tree7.nodes[left_id];
+        assert_eq!(left.key, "L".to_string());
+        assert_eq!(left.color, Color::Red);
+        let ll_id = left.left.unwrap();
+        let ll = &tree7.nodes[ll_id];
+        assert_eq!(ll.key, "J".to_string());
+        assert_eq!(ll.color, Color::Black);
+        let lr_id = left.right.unwrap();
+        let lr = &tree7.nodes[lr_id];
+        assert_eq!(lr.key, "P".to_string());
+        assert_eq!(lr.color, Color::Black);
+        let lll_id = ll.left.unwrap();
+        let lll = &tree7.nodes[lll_id];
+        assert_eq!(lll.key, "H".to_string());
+        assert_eq!(lll.color, Color::Red);
     }
 
     #[test]
