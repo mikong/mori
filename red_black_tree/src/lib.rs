@@ -42,7 +42,8 @@ pub struct RedBlackTree<K, V>
 }
 
 impl<K, V> RedBlackTree<K, V>
-    where K: PartialOrd
+    where K: PartialOrd + Clone,
+          V: Clone,
 {
     pub fn new() -> Self {
         RedBlackTree {
@@ -177,6 +178,65 @@ impl<K, V> RedBlackTree<K, V>
         Some(self.balance(node_id))
     }
 
+    pub fn delete(&mut self, key: &K) {
+        if !self.contains(key) {
+            return;
+        }
+
+        if let Some(root_id) = self.root {
+            let left_is_red = self.is_red(self.nodes[root_id].left);
+            let right_is_red = self.is_red(self.nodes[root_id].right);
+            if !left_is_red && !right_is_red {
+                self.nodes[root_id].color = Color::Red;
+            }
+
+            self.root = self.rdelete(root_id, key);
+            if let Some(root_id) = self.root {
+                self.nodes[root_id].color = Color::Black;
+            }
+        }
+    }
+
+    fn rdelete(&mut self, node: NodeId, key: &K) -> Option<NodeId> {
+        let mut node_id = node;
+        if *key < self.nodes[node_id].key {
+            if !self.is_red(self.nodes[node_id].left) {
+                let left_id = self.nodes[node_id].left.unwrap();
+                if !self.is_red(self.nodes[left_id].left) {
+                    node_id = self.move_red_left(node_id);
+                }
+            }
+            let left_id = self.nodes[node_id].left.unwrap();
+            self.nodes[node_id].left = self.rdelete(left_id, key);
+        } else {
+            if self.is_red(self.nodes[node_id].left) {
+                node_id = self.rotate_right(node_id);
+            }
+            if *key == self.nodes[node_id].key && self.nodes[node_id].right.is_none() {
+                return None;
+            }
+            
+            if !self.is_red(self.nodes[node_id].right) {
+                let right_id = self.nodes[node_id].right.unwrap();
+                if !self.is_red(self.nodes[right_id].left) {
+                    node_id = self.move_red_right(node_id);
+                }
+            }
+            if *key == self.nodes[node_id].key {
+                let right_id = self.nodes[node_id].right.unwrap();
+                let x_id = self.rmin(right_id);
+                self.nodes[node_id].key = self.nodes[x_id].key.clone();
+                self.nodes[node_id].value = self.nodes[x_id].value.clone();
+                self.nodes[node_id].right = self.rdelete_min(right_id);
+            } else {
+                let right_id = self.nodes[node_id].right.unwrap();
+                self.nodes[node_id].right = self.rdelete(right_id, key);
+            }
+        }
+        Some(self.balance(node_id))
+    }
+
+
     // Red-black tree helper methods
 
     fn rotate_left(&mut self, parent: NodeId) -> NodeId {
@@ -239,6 +299,20 @@ impl<K, V> RedBlackTree<K, V>
             if self.is_red(self.nodes[right_id].left) {
                 self.nodes[node_id].right = Some(self.rotate_right(right_id));
                 node_id = self.rotate_left(node_id);
+                self.flip_colors(node_id);
+            }
+        }
+
+        node_id
+    }
+
+    fn move_red_right(&mut self, node: NodeId) -> NodeId {
+        let mut node_id = node;
+        self.flip_colors(node_id);
+
+        if let Some(left_id) = self.nodes[node_id].left {
+            if self.is_red(self.nodes[left_id].left) {
+                node_id = self.rotate_right(node_id);
                 self.flip_colors(node_id);
             }
         }
@@ -464,6 +538,56 @@ mod tests {
         let lll = &tree7.nodes[lll_id];
         assert_eq!(lll.key, "H".to_string());
         assert_eq!(lll.color, Color::Red);
+    }
+
+    #[test]
+    fn delete() {
+        let s = "S".to_string();
+        let e = "E".to_string();
+
+        // Case: Empty RBT
+        let mut tree0: RedBlackTree<String, usize> = RedBlackTree::new();
+        tree0.delete(&s);
+
+        // Case: Delete from 2-node and 1-node tree
+        let mut tree2 = RedBlackTree::new();
+
+        //    S
+        //   /
+        //  E
+        //
+        tree2.put("S".to_string(), 1);
+        tree2.put("E".to_string(), 2);
+        tree2.delete(&e);
+        assert_eq!(tree2.get(&e), None);
+        let root_id = tree2.root.unwrap();
+        let root = &tree2.nodes[root_id];
+        assert_eq!(root.color, Color::Black);
+        tree2.delete(&s);
+        assert_eq!(tree2.root, None);
+
+        // Case: 4-node tree
+        let mut tree4 = RedBlackTree::new();
+
+        //    E           R
+        //   / \         / \
+        //  A   S   ->  A   S
+        //     //
+        //     R
+        //
+        tree4.put("S".to_string(), 1);
+        tree4.put("E".to_string(), 2);
+        tree4.put("A".to_string(), 3);
+        tree4.put("R".to_string(), 4);
+        tree4.delete(&e);
+        assert_eq!(tree4.get(&e), None);
+        let root_id = tree4.root.unwrap();
+        let root = &tree4.nodes[root_id];
+        assert_eq!(root.key, "R".to_string());
+        let right_id = root.right.unwrap();
+        let right = &tree4.nodes[right_id];
+        assert_eq!(right.key, "S".to_string());
+        assert_eq!(right.color, Color::Black);
     }
 
     #[test]
