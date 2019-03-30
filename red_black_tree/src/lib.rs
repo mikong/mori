@@ -92,6 +92,10 @@ impl<K, V> RedBlackTree<K, V>
         None
     }
 
+    pub fn contains(&self, key: K) -> bool {
+        self.get(key).is_some()
+    }
+
     pub fn put(&mut self, key: K, value: V) {
         self.root = self.rput(self.root, key, value);
 
@@ -326,12 +330,18 @@ mod tests {
 
     #[test]
     fn get_value() {
-        let tree: RedBlackTree<usize, String> = RedBlackTree::new();
+        let mut tree = RedBlackTree::new();
 
         // empty tree case
-        assert_eq!(tree.get(8), None);
+        assert_eq!(tree.contains("S".to_string()), false);
+        assert_eq!(tree.get("S".to_string()), None);
 
-        // TODO: non-empty case
+        populate_tree(&mut tree);
+
+        assert_eq!(tree.contains("S".to_string()), true);
+        assert_eq!(tree.get("S".to_string()), Some(&0));
+        assert_eq!(tree.get("H".to_string()), Some(&5));
+        assert_eq!(tree.contains("Z".to_string()), false);
     }
 
     #[test]
