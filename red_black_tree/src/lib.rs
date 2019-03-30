@@ -77,13 +77,13 @@ impl<K, V> RedBlackTree<K, V>
         next_index
     }
 
-    pub fn get(&self, key: K) -> Option<&V> {
+    pub fn get(&self, key: &K) -> Option<&V> {
         let mut x = &self.root;
         while let Some(node_id) = x {
             let node = &self.nodes[*node_id];
-            if key < node.key {
+            if *key < node.key {
                 x = &node.left;
-            } else if key > node.key {
+            } else if *key > node.key {
                 x = &node.right;
             } else {
                 return Some(&node.value);
@@ -92,7 +92,7 @@ impl<K, V> RedBlackTree<K, V>
         None
     }
 
-    pub fn contains(&self, key: K) -> bool {
+    pub fn contains(&self, key: &K) -> bool {
         self.get(key).is_some()
     }
 
@@ -333,15 +333,16 @@ mod tests {
         let mut tree = RedBlackTree::new();
 
         // empty tree case
-        assert_eq!(tree.contains("S".to_string()), false);
-        assert_eq!(tree.get("S".to_string()), None);
+        let s = "S".to_string();
+        assert_eq!(tree.contains(&s), false);
+        assert_eq!(tree.get(&s), None);
 
         populate_tree(&mut tree);
 
-        assert_eq!(tree.contains("S".to_string()), true);
-        assert_eq!(tree.get("S".to_string()), Some(&0));
-        assert_eq!(tree.get("H".to_string()), Some(&5));
-        assert_eq!(tree.contains("Z".to_string()), false);
+        assert_eq!(tree.contains(&s), true);
+        assert_eq!(tree.get(&s), Some(&0));
+        assert_eq!(tree.get(&"H".to_string()), Some(&5));
+        assert_eq!(tree.contains(&"Z".to_string()), false);
     }
 
     #[test]
@@ -410,7 +411,7 @@ mod tests {
         tree2.put(s.clone(), 1);
         tree2.put(e.clone(), 2);
         tree2.delete_min();
-        assert_eq!(tree2.get(e), None);
+        assert_eq!(tree2.get(&e), None);
         assert_eq!(tree2.min(), Some(&s));
         let root_id = tree2.root.unwrap();
         let root = &tree2.nodes[root_id];
