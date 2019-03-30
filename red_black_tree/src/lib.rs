@@ -5,9 +5,7 @@ pub enum Color {
 }
 
 #[derive(Debug)]
-pub struct Node<K, V>
-    where K: PartialOrd
-{
+pub struct Node<K, V> {
     key: K,
     value: V,
     left: Option<NodeId>,
@@ -18,9 +16,7 @@ pub struct Node<K, V>
 
 type NodeId = usize;
 
-impl<K, V> Node<K, V>
-    where K: PartialOrd
-{
+impl<K, V> Node<K, V> {
     pub fn new(key: K, value: V, color: Color) -> Self {
         Node {
             key,
@@ -34,9 +30,7 @@ impl<K, V> Node<K, V>
 }
 
 #[derive(Debug)]
-pub struct RedBlackTree<K, V>
-    where K: PartialOrd
-{
+pub struct RedBlackTree<K, V> {
     root: Option<NodeId>,
     nodes: Vec<Node<K, V>>,
 }
