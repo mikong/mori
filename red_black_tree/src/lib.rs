@@ -130,7 +130,7 @@ impl<K, V> RedBlackTree<K, V>
     }
 
     fn rput(&mut self, node: Option<NodeId>, key: K, value: V) -> Option<NodeId> {
-        if let Some(node_id) = node {
+        if let Some(mut node_id) = node {
             if key < self.nodes[node_id].key {
                 self.nodes[node_id].left = self.rput(self.nodes[node_id].left, key, value);
             } else if key > self.nodes[node_id].key {
@@ -140,7 +140,6 @@ impl<K, V> RedBlackTree<K, V>
             }
 
             // Fix any right-leaning links
-            let mut node_id = node_id;
             let right_is_red = self.is_red(self.nodes[node_id].right);
             let left_is_red = self.is_red(self.nodes[node_id].left);
             if right_is_red && !left_is_red {
@@ -182,8 +181,7 @@ impl<K, V> RedBlackTree<K, V>
         }
     }
 
-    fn rdelete_min(&mut self, node: NodeId) -> Option<NodeId> {
-        let mut node_id = node;
+    fn rdelete_min(&mut self, mut node_id: NodeId) -> Option<NodeId> {
         if self.nodes[node_id].left.is_none() {
             return None;
         }
@@ -221,8 +219,7 @@ impl<K, V> RedBlackTree<K, V>
         }
     }
 
-    fn rdelete(&mut self, node: NodeId, key: &K) -> Option<NodeId> {
-        let mut node_id = node;
+    fn rdelete(&mut self, mut node_id: NodeId, key: &K) -> Option<NodeId> {
         if *key < self.nodes[node_id].key {
             if !self.is_red(self.nodes[node_id].left) {
                 let left_id = self.nodes[node_id].left.unwrap();
@@ -291,17 +288,17 @@ impl<K, V> RedBlackTree<K, V>
         new
     }
 
-    fn flip_colors(&mut self, node: NodeId) {
-        let left = self.nodes[node].left.unwrap();
-        let right = self.nodes[node].right.unwrap();
-        match self.nodes[node].color {
+    fn flip_colors(&mut self, node_id: NodeId) {
+        let left = self.nodes[node_id].left.unwrap();
+        let right = self.nodes[node_id].right.unwrap();
+        match self.nodes[node_id].color {
             Color::Red => {
-                self.nodes[node].color = Color::Black;
+                self.nodes[node_id].color = Color::Black;
                 self.nodes[left].color = Color::Red;
                 self.nodes[right].color = Color::Red;
             },
             Color::Black => {
-                self.nodes[node].color = Color::Red;
+                self.nodes[node_id].color = Color::Red;
                 self.nodes[left].color = Color::Black;
                 self.nodes[right].color = Color::Black;
             },
@@ -310,13 +307,12 @@ impl<K, V> RedBlackTree<K, V>
 
     fn is_red(&self, node: Option<NodeId>) -> bool {
         match node {
-            Some(node) => self.nodes[node].color == Color::Red,
+            Some(node_id) => self.nodes[node_id].color == Color::Red,
             None => false,
         }
     }
 
-    fn move_red_left(&mut self, node: NodeId) -> NodeId {
-        let mut node_id = node;
+    fn move_red_left(&mut self, mut node_id: NodeId) -> NodeId {
         self.flip_colors(node_id);
 
         if let Some(right_id) = self.nodes[node_id].right {
@@ -330,8 +326,7 @@ impl<K, V> RedBlackTree<K, V>
         node_id
     }
 
-    fn move_red_right(&mut self, node: NodeId) -> NodeId {
-        let mut node_id = node;
+    fn move_red_right(&mut self, mut node_id: NodeId) -> NodeId {
         self.flip_colors(node_id);
 
         if let Some(left_id) = self.nodes[node_id].left {
@@ -344,9 +339,7 @@ impl<K, V> RedBlackTree<K, V>
         node_id
     }
 
-    fn balance(&mut self, node: NodeId) -> NodeId {
-        let mut node_id = node;
-
+    fn balance(&mut self, mut node_id: NodeId) -> NodeId {
         if self.is_red(self.nodes[node_id].right) {
             node_id = self.rotate_left(node_id);
         }
@@ -378,10 +371,10 @@ impl<K, V> RedBlackTree<K, V>
         None
     }
 
-    fn rmin(&self, node: NodeId) -> NodeId {
-        match self.nodes[node].left {
-            Some(node_id) => self.rmin(node_id),
-            None => node,
+    fn rmin(&self, node_id: NodeId) -> NodeId {
+        match self.nodes[node_id].left {
+            Some(left_id) => self.rmin(left_id),
+            None => node_id,
         }
     }
 
@@ -393,10 +386,10 @@ impl<K, V> RedBlackTree<K, V>
         None
     }
 
-    fn rmax(&self, node: NodeId) -> NodeId {
-        match self.nodes[node].right {
-            Some(node_id) => self.rmax(node_id),
-            None => node,
+    fn rmax(&self, node_id: NodeId) -> NodeId {
+        match self.nodes[node_id].right {
+            Some(right_id) => self.rmax(right_id),
+            None => node_id,
         }
     }
 
