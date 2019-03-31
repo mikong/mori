@@ -29,6 +29,36 @@ impl<K, V> Node<K, V> {
     }
 }
 
+pub struct TreeIter<'a, K: 'a, V: 'a> {
+    stack: Vec<NodeId>,
+    tree: &'a RedBlackTree<K, V>,
+}
+
+impl<'a, K: 'a, V: 'a> TreeIter<'a, K, V> {
+    fn push_left_edge(&mut self, mut node: Option<NodeId>) {
+        while let Some(node_id) = node {
+            self.stack.push(node_id);
+            node = self.tree.nodes[node_id].left;
+        }
+    }
+}
+
+impl<'a, K, V> Iterator for TreeIter<'a, K, V> {
+    type Item = (&'a K, &'a V);
+
+    fn next(&mut self) -> Option<(&'a K, &'a V)> {
+        let node_id = match self.stack.pop() {
+            Some(n) => n,
+            None => return None,
+        };
+
+        self.push_left_edge(self.tree.nodes[node_id].right);
+
+        let node = &self.tree.nodes[node_id];
+        Some((&node.key, &node.value))
+    }
+}
+
 #[derive(Debug)]
 pub struct RedBlackTree<K, V> {
     root: Option<NodeId>,
@@ -369,6 +399,16 @@ impl<K, V> RedBlackTree<K, V>
             None => node,
         }
     }
+
+    // Iterator
+    pub fn iter(&self) -> TreeIter<K, V> {
+        let mut iter = TreeIter {
+            stack: Vec::new(),
+            tree: self,
+        };
+        iter.push_left_edge(self.root);
+        iter
+    }
 }
 
 #[cfg(test)]
@@ -377,9 +417,9 @@ mod tests {
 
     //      E
     //     / \
-    //    A   R
+    //    C   R
     //   /   / \
-    //  C   H   S
+    //  A   H   S
     fn populate_tree(tree: &mut RedBlackTree<String, usize>) {
         tree.put("S".to_string(), 0);
         tree.put("E".to_string(), 12);
@@ -617,5 +657,20 @@ mod tests {
         populate_tree(&mut tree);
 
         assert_eq!(tree.max(), Some(&"S".to_string()));
+    }
+
+    #[test]
+    fn iterator() {
+        let mut tree = RedBlackTree::new();
+        populate_tree(&mut tree);
+        let mut tree_iter = tree.iter();
+
+        assert_eq!(tree_iter.next(), Some((&"A".to_string(), &8)));
+        assert_eq!(tree_iter.next(), Some((&"C".to_string(), &4)));
+        assert_eq!(tree_iter.next(), Some((&"E".to_string(), &12)));
+        assert_eq!(tree_iter.next(), Some((&"H".to_string(), &5)));
+        assert_eq!(tree_iter.next(), Some((&"R".to_string(), &3)));
+        assert_eq!(tree_iter.next(), Some((&"S".to_string(), &0)));
+        assert_eq!(tree_iter.next(), None);
     }
 }
