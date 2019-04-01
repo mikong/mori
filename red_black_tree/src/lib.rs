@@ -59,6 +59,18 @@ impl<'a, K, V> Iterator for TreeIter<'a, K, V> {
     }
 }
 
+pub struct Keys<'a, K: 'a, V: 'a> {
+    inner: TreeIter<'a, K, V>,
+}
+
+impl<'a, K, V> Iterator for Keys<'a, K, V> {
+    type Item = &'a K;
+
+    fn next(&mut self) -> Option<&'a K> {
+        self.inner.next().map(|(k, _)| k)
+    }
+}
+
 #[derive(Debug)]
 pub struct RedBlackTree<K, V> {
     root: Option<NodeId>,
@@ -402,6 +414,10 @@ impl<K, V> RedBlackTree<K, V>
         iter.push_left_edge(self.root);
         iter
     }
+
+    pub fn keys(&self) -> Keys<K, V> {
+        Keys { inner: self.iter() }
+    }
 }
 
 #[cfg(test)]
@@ -665,5 +681,16 @@ mod tests {
         assert_eq!(tree_iter.next(), Some((&"R".to_string(), &3)));
         assert_eq!(tree_iter.next(), Some((&"S".to_string(), &0)));
         assert_eq!(tree_iter.next(), None);
+    }
+
+    #[test]
+    fn keys() {
+        let mut tree = RedBlackTree::new();
+        populate_tree(&mut tree);
+        let keys: Vec<&String> = tree.keys().collect();
+
+        assert_eq!(keys, vec![&"A".to_string(), &"C".to_string(),
+            &"E".to_string(), &"H".to_string(), &"R".to_string(),
+            &"S".to_string()]);
     }
 }
