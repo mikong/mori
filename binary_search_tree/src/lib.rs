@@ -57,6 +57,36 @@ pub struct RawNode<V: Clone> {
     size: usize,
 }
 
+pub struct TreeIter<V: Clone> {
+    unvisited: Vec<Node<V>>,
+}
+
+impl<V: Clone> TreeIter<V> {
+    fn push_left_edge(&mut self, x: &Option<Node<V>>) {
+        if let Some(ref node) = *x {
+            self.unvisited.push(node.clone());
+            self.push_left_edge(&node.get().left);
+        }
+    }
+}
+
+impl<V: Clone> Iterator for TreeIter<V> {
+    type Item = (usize, V);
+
+    fn next(&mut self) -> Option<(usize, V)> {
+        let node = match self.unvisited.pop() {
+            Some(n) => n,
+            None => return None,
+        };
+
+        self.push_left_edge(&node.get().right);
+
+        let key = node.get().key;
+        let value = node.get().value.clone();
+        Some((key, value))
+    }
+}
+
 #[derive(Debug)]
 pub struct BST<V: Clone> {
     root: Option<Node<V>>,
@@ -243,6 +273,12 @@ impl<V: Clone> BST<V> {
         None
     }
 
+    pub fn iter(&self) -> TreeIter<V> {
+        let mut iter = TreeIter { unvisited: Vec::new() };
+        iter.push_left_edge(&self.root);
+        iter
+    }
+
     pub fn keys(&self) -> Vec<usize> {
         let mut v = Vec::new();
         BST::inorder(&self.root, &mut v);
@@ -377,7 +413,7 @@ mod tests {
         // after delete
         bst.delete(8);
         assert_eq!(bst.contains(8), false);
-        assert_eq!(bst.get(8), Some("S".to_string()));
+        assert_eq!(bst.get(8), None);
     }
 
     #[test]
@@ -493,5 +529,16 @@ mod tests {
         bst.delete(7);
         assert_eq!(bst.size(), 7);
         assert_eq!(bst.keys(), vec![1, 2, 4, 5, 6, 8, 9]);
+    }
+
+    #[test]
+    fn iterator() {
+        let mut bst = BST::new();
+        populate_tree(&mut bst);
+        let mut tree_iter = bst.iter();
+
+        assert_eq!(tree_iter.next(), Some((1, "A".to_string())));
+        assert_eq!(tree_iter.next(), Some((2, "C".to_string())));
+        assert_eq!(tree_iter.next(), Some((3, "E".to_string())));
     }
 }
