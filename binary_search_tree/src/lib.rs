@@ -78,6 +78,10 @@ impl<V: Clone> BST<V> {
         Node::size(&self.root)
     }
 
+    pub fn contains(&self, key: usize) -> bool {
+        self.get(key).is_some()
+    }
+
     /// Returns a clone of the value associated with the given key.
     pub fn get(&self, key: usize) -> Option<V> {
         BST::get_value(&self.root, key)
@@ -353,15 +357,27 @@ mod tests {
     #[test]
     fn get_value() {
         let mut bst = BST::new();
+
+        // empty tree case
+        assert_eq!(bst.contains(8), false);
+        assert_eq!(bst.get(8), None);
+
         populate_tree(&mut bst);
 
+        assert_eq!(bst.contains(8), true);
         assert_eq!(bst.get(8), Some("S".to_string()));
         assert_eq!(bst.get(2), Some("C".to_string()));
         assert_eq!(bst.get(9), Some("X".to_string()));
         assert_eq!(bst.get(5), Some("H".to_string()));
+
+        // key not in tree
+        assert_eq!(bst.contains(10), false);
         assert_eq!(bst.get(10), None);
 
-        // TODO: get after delete
+        // after delete
+        bst.delete(8);
+        assert_eq!(bst.contains(8), false);
+        assert_eq!(bst.get(8), Some("S".to_string()));
     }
 
     #[test]
