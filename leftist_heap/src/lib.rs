@@ -19,6 +19,13 @@ impl<T> Heap<T> {
             Heap::NonEmpty(ref node) => node.rank,
         }
     }
+
+    pub fn is_empty(&self) -> bool {
+        match self {
+            Heap::Empty => true,
+            _ => false,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -36,5 +43,12 @@ mod tests {
         }));
 
         assert_eq!(heap.rank(), 0);
+        assert_eq!(heap.is_empty(), false);
+    }
+
+    #[test]
+    fn emptiness() {
+        let heap: Heap<u32> = Empty;
+        assert_eq!(heap.is_empty(), true);
     }
 }
