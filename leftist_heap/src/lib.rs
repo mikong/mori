@@ -20,6 +20,24 @@ impl<T> Heap<T> {
         }
     }
 
+    fn make(element: T, left: Heap<T>, right: Heap<T>) -> Heap<T> {
+        if left.rank() >= right.rank() {
+            Heap::NonEmpty(Box::new(Node {
+                rank: right.rank() + 1,
+                element,
+                left,
+                right,
+            }))
+        } else {
+            Heap::NonEmpty(Box::new(Node {
+                rank: left.rank() + 1,
+                element,
+                left: right,
+                right: left,                
+            }))
+        }
+    }
+
     pub fn is_empty(&self) -> bool {
         match self {
             Heap::Empty => true,
