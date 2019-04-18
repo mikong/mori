@@ -76,6 +76,22 @@ impl<T: Ord> Heap<T> {
         });
         Heap::merge(Heap::NonEmpty(new_node), self)
     }
+
+    pub fn find_min(&self) -> Option<&T> {
+        match self {
+            Heap::NonEmpty(ref node) => Some(&node.element),
+            Heap::Empty => None,
+        }
+    }
+
+    pub fn delete_min(self) -> Heap<T> {
+        match self {
+            Heap::NonEmpty(node) => {
+                Heap::merge(node.left, node.right)
+            },
+            Heap::Empty => Heap::Empty,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -85,15 +101,34 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let heap = NonEmpty(Box::new(Node {
-            rank: 0,
-            element: 5,
-            left: Empty,
-            right: Empty,
-        }));
-
-        assert_eq!(heap.rank(), 0);
+        let mut heap = Empty;
+        heap = heap.insert(5);
+        assert_eq!(heap.rank(), 1);
         assert_eq!(heap.is_empty(), false);
+        assert_eq!(heap.find_min(), Some(&5));
+
+        heap = heap.insert(10);
+        assert_eq!(heap.find_min(), Some(&5));
+        assert_eq!(heap.rank(), 1);
+        if let NonEmpty(ref node) = heap {
+            assert_eq!(node.left.rank(), 1);
+            if let NonEmpty(ref left_node) = node.left {
+                assert_eq!(left_node.element, 10);
+            }
+        } else {
+            panic!("Node can't be Empty");
+        }
+
+        heap = heap.insert(15);
+        assert_eq!(heap.rank(), 2);
+        heap = heap.insert(1);
+        assert_eq!(heap.rank(), 1);
+        assert_eq!(heap.find_min(), Some(&1));
+
+        heap = heap.delete_min();
+        assert_eq!(heap.find_min(), Some(&5));
+        heap = heap.delete_min();
+        assert_eq!(heap.find_min(), Some(&10));
     }
 
     #[test]
