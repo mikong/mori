@@ -136,4 +136,29 @@ mod tests {
         let heap: Heap<u32> = Empty;
         assert_eq!(heap.is_empty(), true);
     }
+
+    #[test]
+    fn children_swap() {
+        let mut heap = Empty;
+
+        //    5
+        //   /
+        // 10
+        heap = heap.insert(5).insert(10);
+        if let NonEmpty(ref node) = heap {
+            assert_eq!(node.left.find_min(), Some(&10));
+            assert_eq!(node.right.find_min(), None);
+        };
+
+        //       5
+        //      / \
+        //    15   10
+        //   /  \
+        //  20  25
+        heap = heap.insert(15).insert(20).insert(25);
+        if let NonEmpty(ref node) = heap {
+            assert_eq!(node.left.find_min(), Some(&15));
+            assert_eq!(node.right.find_min(), Some(&10));
+        }
+    }
 }
