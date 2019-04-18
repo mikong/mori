@@ -12,7 +12,7 @@ pub struct Node<T> {
     right: Heap<T>,
 }
 
-impl<T> Heap<T> {
+impl<T: Ord> Heap<T> {
     fn rank(&self) -> usize {
         match self {
             Heap::Empty => 0,
@@ -43,6 +43,38 @@ impl<T> Heap<T> {
             Heap::Empty => true,
             _ => false,
         }
+    }
+
+    fn merge(a: Heap<T>, b: Heap<T>) -> Heap<T> {
+        match (a, b) {
+            (h, Heap::Empty) => h,
+            (Heap::Empty, h) => h,
+            (Heap::NonEmpty(h1), Heap::NonEmpty(h2)) => {
+                if h1.element <= h2.element {
+                    Heap::make(
+                        h1.element,
+                        h1.left,
+                        Heap::merge(h1.right, Heap::NonEmpty(h2))
+                    )
+                } else {
+                    Heap::make(
+                        h2.element,
+                        h2.left,
+                        Heap::merge(Heap::NonEmpty(h1), h2.right)
+                    )
+                }
+            },
+        }
+    }
+
+    pub fn insert(self, x: T) -> Heap<T> {
+        let new_node = Box::new(Node {
+            rank: 1,
+            element: x,
+            left: Heap::Empty,
+            right: Heap::Empty,
+        });
+        Heap::merge(Heap::NonEmpty(new_node), self)
     }
 }
 
