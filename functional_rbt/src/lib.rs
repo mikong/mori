@@ -43,6 +43,37 @@ impl<T: Ord> Tree<T> {
         }
     }
 
+    pub fn insert(self, element: T) -> Tree<T> {
+        match self {
+            Tree::Empty => {
+                Tree::new(
+                    Color::Red,
+                    element,
+                    Tree::Empty,
+                    Tree::Empty
+                )
+            },
+            Tree::NonEmpty(node) => {
+                if element < node.element {
+                    Tree::new(
+                        Color::Black,
+                        node.element,
+                        node.left.insert(element),
+                        node.right
+                    )
+                } else if element > node.element {
+                    Tree::new(
+                        Color::Black,
+                        node.element,
+                        node.left,
+                        node.right.insert(element)
+                    )
+                } else {
+                    Tree::NonEmpty(node)
+                }
+            },
+        }
+    }
 }
 
 #[cfg(test)]
