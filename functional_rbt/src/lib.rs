@@ -19,6 +19,15 @@ pub struct Node<T> {
 }
 
 impl<T: Ord> Tree<T> {
+    pub fn new(color: Color, element: T, left: Tree<T>, right: Tree<T>) -> Tree<T> {
+        Tree::NonEmpty(Box::new(Node {
+            color,
+            element,
+            left,
+            right,
+        }))
+    }
+
     pub fn member(&self, element: &T) -> bool {
         match self {
             Tree::Empty => false,
@@ -33,6 +42,7 @@ impl<T: Ord> Tree<T> {
             },
         }
     }
+
 }
 
 #[cfg(test)]
@@ -43,12 +53,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let tree = NonEmpty(Box::new(Node {
-            color: Red,
-            element: 5,
-            left: Empty,
-            right: Empty,
-        }));
+        let tree = Tree::new(Red, 5, Empty, Empty);
 
         assert_eq!(tree.member(&5), true);
         assert_eq!(tree.member(&6), false);
