@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Color {
     Red,
     Black,
@@ -43,35 +43,132 @@ impl<T: Ord> Tree<T> {
         }
     }
 
-    pub fn insert(self, element: T) -> Tree<T> {
+    fn is_red(&self) -> bool {
+        match self {
+            Tree::NonEmpty(node) => node.color == Color::Red,
+            Tree::Empty => false,
+        }
+    }
+
+    fn left_is_red(&self) -> bool {
+        match self {
+            Tree::NonEmpty(node) => node.left.is_red(),
+            Tree::Empty => false,
+        }
+    }
+
+    fn right_is_red(&self) -> bool {
+        match self {
+            Tree::NonEmpty(node) => node.right.is_red(),
+            Tree::Empty => false,
+        }
+    }
+
+    //                   z
+    //                  / \
+    //                (x)  d
+    //                / \
+    //               a  (y)
+    //                  / \
+    //                 b   c
+    //
+    //                   ⬇︎
+    //       z                       x
+    //      / \         (y)         / \
+    //    (y)  d  ->   /   \   <-  a  (y)
+    //    / \         x     z         / \
+    //  (x)  c       / \   / \       b  (z)
+    //  / \         a  b  c   d         / \
+    // a   b                           c   d
+    //                   ⬆︎
+    //
+    //                  x
+    //                 / \
+    //                a  (z)
+    //                   / \
+    //                 (y)   d
+    //                 / \
+    //                b   c
+    //
+    fn balance(color: Color, element: T, left: Tree<T>, right: Tree<T>) -> Tree<T> {
+        if color == Color::Black && left.is_red() && left.left_is_red() {
+            if let Tree::NonEmpty(node) = left {
+                if let Tree::NonEmpty(lnode) = node.left {
+                    let new_l = Tree::new(Color::Black, lnode.element, lnode.left, lnode.right);
+                    let new_r = Tree::new(Color::Black, element, node.right, right);
+                    return Tree::new(Color::Red, node.element, new_l, new_r);
+                }
+            }
+        } else if color == Color::Black && left.is_red() && left.right_is_red() {
+            if let Tree::NonEmpty(node) = left {
+                if let Tree::NonEmpty(rnode) = node.right {
+                    let new_l = Tree::new(Color::Black, node.element, node.left, rnode.left);
+                    let new_r = Tree::new(Color::Black, element, rnode.right, right);
+                    return Tree::new(Color::Red, rnode.element, new_l, new_r);
+                }
+            }
+        } else if color == Color::Black && right.is_red() && right.left_is_red() {
+            if let Tree::NonEmpty(node) = right {
+                if let Tree::NonEmpty(lnode) = node.left {
+                    let new_l = Tree::new(Color::Black, element, left, lnode.left);
+                    let new_r = Tree::new(Color::Black, node.element, lnode.right, node.right);
+                    return Tree::new(Color::Red, lnode.element, new_l, new_r);
+                }
+            }
+        } else if color == Color::Black && right.is_red() && right.right_is_red() {
+            if let Tree::NonEmpty(node) = right {
+                if let Tree::NonEmpty(rnode) = node.right {
+                    let new_l = Tree::new(Color::Black, element, left, node.left);
+                    let new_r = Tree::new(Color::Black, rnode.element, rnode.left, rnode.right);
+                    return Tree::new(Color::Red, node.element, new_l, new_r);
+                }
+            }
+        } else {
+            return Tree::new(color, element, left, right);
+        }
+
+        unreachable!();
+    }
+
+    fn ins(self, element: T) -> Tree<T> {
         match self {
             Tree::Empty => {
-                Tree::new(
-                    Color::Red,
-                    element,
-                    Tree::Empty,
-                    Tree::Empty
-                )
+                Tree::new(Color::Red, element, Tree::Empty, Tree::Empty)
             },
             Tree::NonEmpty(node) => {
                 if element < node.element {
-                    Tree::new(
-                        Color::Black,
+                    Tree::balance(
+                        node.color,
                         node.element,
-                        node.left.insert(element),
-                        node.right
+                        node.left.ins(element),
+                        node.right,
                     )
                 } else if element > node.element {
-                    Tree::new(
-                        Color::Black,
+                    Tree::balance(
+                        node.color,
                         node.element,
                         node.left,
-                        node.right.insert(element)
+                        node.right.ins(element),
                     )
                 } else {
                     Tree::NonEmpty(node)
                 }
             },
+        }
+    }
+
+    pub fn insert(self, element: T) -> Tree<T> {
+        let tree = self.ins(element);
+        match tree {
+            Tree::NonEmpty(node) => {
+                Tree::new(
+                    Color::Black,
+                    node.element,
+                    node.left,
+                    node.right,
+                )
+            },
+            Tree::Empty => unreachable!(),
         }
     }
 }
