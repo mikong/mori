@@ -124,6 +124,7 @@ impl<T: Ord> Tree<T> {
                 }
             }
         } else {
+            // FIXME
             return Tree::new(color, element, left, right);
         }
 
@@ -191,25 +192,25 @@ mod tests {
     fn insert() {
         let mut tree = Tree::Empty;
 
-        tree = tree.insert("A".to_string());
+        tree = tree.insert("C".to_string());
         if let NonEmpty(ref node) = tree {
             assert_eq!(node.color, Black);
         }
 
-        tree = tree.insert("E".to_string());
+        tree = tree.insert("F".to_string());
         assert_eq!(tree.right_is_red(), true);
 
-        //     A
-        //      \              E
-        //      (E)     ->    / \
-        //        \          A   S
+        //     C
+        //      \              F
+        //      (F)     ->    / \
+        //        \          C   S
         //        (S)
         tree = tree.insert("S".to_string());
         if let NonEmpty(node) = &tree {
-            assert_eq!(node.element, "E".to_string());
+            assert_eq!(node.element, "F".to_string());
             assert_eq!(node.color, Black);
             if let (NonEmpty(lnode), NonEmpty(rnode)) = (&node.left, &node.right) {
-                assert_eq!(lnode.element, "A".to_string());
+                assert_eq!(lnode.element, "C".to_string());
                 assert_eq!(lnode.color, Black);
                 assert_eq!(rnode.element, "S".to_string());
                 assert_eq!(rnode.color, Black);
@@ -218,6 +219,54 @@ mod tests {
             }
         } else {
             panic!("Node can't be Empty");
+        }
+
+        //      F
+        //     / \             F
+        //    C   S           / \
+        //   /        ->    (B)  S
+        // (A)              / \
+        //   \             A   C
+        //   (B)
+        tree = tree.insert("A".to_string()).insert("B".to_string());
+        if let NonEmpty(node) = &tree {
+            if let NonEmpty(lnode) = &node.left {
+                assert_eq!(lnode.element, "B".to_string());
+                assert_eq!(lnode.color, Red);
+                if let (NonEmpty(ll), NonEmpty(lr)) = (&lnode.left, &lnode.right) {
+                    assert_eq!(ll.element, "A".to_string());
+                    assert_eq!(ll.color, Black);
+                    assert_eq!(lr.element, "C".to_string());
+                    assert_eq!(lr.color, Black);
+                }
+            }
+        }
+
+        //      F
+        //     / \              F                D
+        //   (B)  S            / \             /   \
+        //   / \             (B)  S          B       F
+        //  A   C      ->    / \      ->    / \     / \
+        //       \          A  (D)         A   C   E   S
+        //       (E)           / \
+        //       /            C   E
+        //     (D)
+        tree = tree.insert("E".to_string()).insert("D".to_string());
+        if let NonEmpty(node) = &tree {
+            assert_eq!(node.element, "D".to_string());
+            assert_eq!(node.color, Black);
+            if let (NonEmpty(lnode), NonEmpty(rnode)) = (&node.left, &node.right) {
+                assert_eq!(lnode.element, "B".to_string());
+                assert_eq!(lnode.color, Black);
+                assert_eq!(rnode.element, "F".to_string());
+                assert_eq!(rnode.color, Black);
+                if let (NonEmpty(lr), NonEmpty(rl)) = (&lnode.right, &rnode.left) {
+                    assert_eq!(lr.element, "C".to_string());
+                    assert_eq!(lr.color, Black);
+                    assert_eq!(rl.element, "E".to_string());
+                    assert_eq!(rl.color, Black);
+                }
+            }
         }
     }
 }
