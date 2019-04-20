@@ -186,4 +186,38 @@ mod tests {
         assert_eq!(tree.member(&5), true);
         assert_eq!(tree.member(&6), false);
     }
+
+    #[test]
+    fn insert() {
+        let mut tree = Tree::Empty;
+
+        tree = tree.insert("A".to_string());
+        if let NonEmpty(ref node) = tree {
+            assert_eq!(node.color, Black);
+        }
+
+        tree = tree.insert("E".to_string());
+        assert_eq!(tree.right_is_red(), true);
+
+        //     A
+        //      \              E
+        //      (E)     ->    / \
+        //        \          A   S
+        //        (S)
+        tree = tree.insert("S".to_string());
+        if let NonEmpty(node) = &tree {
+            assert_eq!(node.element, "E".to_string());
+            assert_eq!(node.color, Black);
+            if let (NonEmpty(lnode), NonEmpty(rnode)) = (&node.left, &node.right) {
+                assert_eq!(lnode.element, "A".to_string());
+                assert_eq!(lnode.color, Black);
+                assert_eq!(rnode.element, "S".to_string());
+                assert_eq!(rnode.color, Black);
+            } else {
+                panic!("Left and right nodes should not be Empty");
+            }
+        } else {
+            panic!("Node can't be Empty");
+        }
+    }
 }
