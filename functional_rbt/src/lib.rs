@@ -41,9 +41,24 @@ impl<T: Ord> Tree<T> {
         }
     }
 
+    /// Returns `true` if the tree contains the specified element.
     pub fn member(&self, element: &T) -> bool {
         match self {
             Tree::Empty => false,
+
+            // A more straightforward implementation of this match is to handle 3 cases:
+            //
+            // 1. If element is smaller than the root of the subtree, then recursively
+            //    search its left subtree.
+            // 2. If element is larger than the root of the subtree, then recursively
+            //    search its right subtree.
+            // 3. Otherwise the element is equal to the root of the subtree.
+            //
+            // That performs approximately 2 * d comparisons (d is the depth of
+            // the tree).
+            //
+            // The following alternative implementation, as suggested by Andersson's
+            // paper on binary search trees in 1991, only takes d + 1 comparisons.
             Tree::NonEmpty(ref node) => {
                 if *element < node.element {
                     node.left.member(element)
