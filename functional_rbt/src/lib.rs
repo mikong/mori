@@ -28,16 +28,27 @@ impl<T: Ord> Tree<T> {
         }))
     }
 
+    fn memb(&self, element: &T, candidate: &T) -> bool {
+        match self {
+            Tree::Empty => *element == *candidate,
+            Tree::NonEmpty(ref node) => {
+                if *element < node.element {
+                    node.left.memb(element, candidate)
+                } else {
+                    node.right.memb(element, &node.element)
+                }
+            },
+        }
+    }
+
     pub fn member(&self, element: &T) -> bool {
         match self {
             Tree::Empty => false,
             Tree::NonEmpty(ref node) => {
                 if *element < node.element {
                     node.left.member(element)
-                } else if *element > node.element {
-                    node.right.member(element)
                 } else {
-                    true
+                    node.right.memb(element, &node.element)
                 }
             },
         }
@@ -186,6 +197,38 @@ mod tests {
 
         assert_eq!(tree.member(&5), true);
         assert_eq!(tree.member(&6), false);
+    }
+
+    #[test]
+    fn member() {
+        let mut tree = Tree::Empty;
+
+        //        20
+        //       /  \
+        //    10     (30)
+        //   / \     /   \
+        // (5) (15) 25   35
+        tree = tree
+            .insert(25)
+            .insert(20)
+            .insert(30)
+            .insert(10)
+            .insert(35)
+            .insert(5)
+            .insert(15);
+        assert_eq!(tree.member(&20), true);
+        assert_eq!(tree.member(&10), true);
+        assert_eq!(tree.member(&30), true);
+        assert_eq!(tree.member(&5), true);
+        assert_eq!(tree.member(&15), true);
+        assert_eq!(tree.member(&25), true);
+        assert_eq!(tree.member(&35), true);
+        assert_eq!(tree.member(&4), false);
+        assert_eq!(tree.member(&17), false);
+        assert_eq!(tree.member(&22), false);
+        assert_eq!(tree.member(&27), false);
+        assert_eq!(tree.member(&33), false);
+        assert_eq!(tree.member(&40), false);
     }
 
     #[test]
