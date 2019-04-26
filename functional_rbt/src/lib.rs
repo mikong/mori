@@ -150,7 +150,6 @@ impl<T: Ord> Tree<T> {
                 }
             }
         } else {
-            // FIXME
             return Tree::new(color, element, left, right);
         }
 
