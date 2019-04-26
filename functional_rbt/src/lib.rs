@@ -90,50 +90,25 @@ impl<T: Ord> Tree<T> {
         }
     }
 
-    //                   z
-    //                  / \
-    //                (x)  d
-    //                / \
-    //               a  (y)
-    //                  / \
-    //                 b   c
-    //
-    //                   ⬇︎
-    //       z                       x
-    //      / \         (y)         / \
-    //    (y)  d  ->   /   \   <-  a  (y)
-    //    / \         x     z         / \
-    //  (x)  c       / \   / \       b  (z)
-    //  / \         a  b  c   d         / \
-    // a   b                           c   d
-    //                   ⬆︎
-    //
     //                  x
-    //                 / \
-    //                a  (z)
-    //                   / \
-    //                 (y)   d
-    //                 / \
-    //                b   c
+    //     (y)         / \
+    //    /   \   <-  a  (y)
+    //   x     z         / \
+    //  / \   / \       b  (z)
+    // a  b  c   d         / \
+    //                    c   d
+    //      ⬆︎
     //
-    fn balance(color: Color, element: T, left: Tree<T>, right: Tree<T>) -> Tree<T> {
-        if color == Color::Black && left.is_red() && left.left_is_red() {
-            if let Tree::NonEmpty(node) = left {
-                if let Tree::NonEmpty(lnode) = node.left {
-                    let new_l = Tree::new(Color::Black, lnode.element, lnode.left, lnode.right);
-                    let new_r = Tree::new(Color::Black, element, node.right, right);
-                    return Tree::new(Color::Red, node.element, new_l, new_r);
-                }
-            }
-        } else if color == Color::Black && left.is_red() && left.right_is_red() {
-            if let Tree::NonEmpty(node) = left {
-                if let Tree::NonEmpty(rnode) = node.right {
-                    let new_l = Tree::new(Color::Black, node.element, node.left, rnode.left);
-                    let new_r = Tree::new(Color::Black, element, rnode.right, right);
-                    return Tree::new(Color::Red, rnode.element, new_l, new_r);
-                }
-            }
-        } else if color == Color::Black && right.is_red() && right.left_is_red() {
+    //     x
+    //    / \
+    //   a  (z)
+    //      / \
+    //    (y)  d
+    //    / \
+    //   b   c
+    //
+    fn rbalance(color: Color, element: T, left: Tree<T>, right: Tree<T>) -> Tree<T> {
+        if color == Color::Black && right.is_red() && right.left_is_red() {
             if let Tree::NonEmpty(node) = right {
                 if let Tree::NonEmpty(lnode) = node.left {
                     let new_l = Tree::new(Color::Black, element, left, lnode.left);
@@ -156,6 +131,46 @@ impl<T: Ord> Tree<T> {
         unreachable!();
     }
 
+    //                   z
+    //                  / \
+    //                (x)  d
+    //                / \
+    //               a  (y)
+    //                  / \
+    //                 b   c
+    //
+    //                   ⬇︎
+    //       z
+    //      / \         (y)
+    //    (y)  d  ->   /   \
+    //    / \         x     z
+    //  (x)  c       / \   / \
+    //  / \         a  b  c   d
+    // a   b
+    fn lbalance(color: Color, element: T, left: Tree<T>, right: Tree<T>) -> Tree<T> {
+        if color == Color::Black && left.is_red() && left.left_is_red() {
+            if let Tree::NonEmpty(node) = left {
+                if let Tree::NonEmpty(lnode) = node.left {
+                    let new_l = Tree::new(Color::Black, lnode.element, lnode.left, lnode.right);
+                    let new_r = Tree::new(Color::Black, element, node.right, right);
+                    return Tree::new(Color::Red, node.element, new_l, new_r);
+                }
+            }
+        } else if color == Color::Black && left.is_red() && left.right_is_red() {
+            if let Tree::NonEmpty(node) = left {
+                if let Tree::NonEmpty(rnode) = node.right {
+                    let new_l = Tree::new(Color::Black, node.element, node.left, rnode.left);
+                    let new_r = Tree::new(Color::Black, element, rnode.right, right);
+                    return Tree::new(Color::Red, rnode.element, new_l, new_r);
+                }
+            }
+        } else {
+            return Tree::new(color, element, left, right);
+        }
+
+        unreachable!();
+    }
+
     fn ins(self, element: T) -> Tree<T> {
         match self {
             Tree::Empty => {
@@ -163,14 +178,14 @@ impl<T: Ord> Tree<T> {
             },
             Tree::NonEmpty(node) => {
                 if element < node.element {
-                    Tree::balance(
+                    Tree::lbalance(
                         node.color,
                         node.element,
                         node.left.ins(element),
                         node.right,
                     )
                 } else if element > node.element {
-                    Tree::balance(
+                    Tree::rbalance(
                         node.color,
                         node.element,
                         node.left,
