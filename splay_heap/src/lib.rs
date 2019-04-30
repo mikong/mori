@@ -12,13 +12,17 @@ pub struct Node<T> {
 }
 
 impl<T> Tree<T> {
+    pub fn new(element: T, left: Tree<T>, right: Tree<T>) -> Tree<T> {
+        Tree::NonEmpty(Box::new(Node {
+            element,
+            left,
+            right,
+        }))
+    }
+
     pub fn insert(self, element: T) -> Tree<T> {
         let (smaller, bigger) = self.partition(&element);
-        Tree::NonEmpty(Box::new(Node {
-            element: element,
-            left: smaller,
-            right: bigger,
-        }))
+        Tree::new(element, smaller, bigger)
     }
 
     fn partition(self, element: &T) -> (Tree<T>, Tree<T>) {
@@ -33,10 +37,6 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let _tree = NonEmpty(Box::new(Node {
-            element: 5,
-            left: Empty,
-            right: Empty,
-        }));
+        let _tree = Tree::new(5, Empty, Empty);
     }
 }
