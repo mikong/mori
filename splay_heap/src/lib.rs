@@ -11,6 +11,21 @@ pub struct Node<T> {
     right: Tree<T>,
 }
 
+impl<T> Tree<T> {
+    pub fn insert(self, element: T) -> Tree<T> {
+        let (smaller, bigger) = self.partition(&element);
+        Tree::NonEmpty(Box::new(Node {
+            element: element,
+            left: smaller,
+            right: bigger,
+        }))
+    }
+
+    fn partition(self, element: &T) -> (Tree<T>, Tree<T>) {
+        unimplemented!();
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
