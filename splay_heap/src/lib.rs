@@ -20,6 +20,13 @@ impl<T: Ord> Heap<T> {
         }))
     }
 
+    pub fn is_empty(&self) -> bool {
+        match self {
+            Heap::Empty => true,
+            _ => false,
+        }
+    }
+
     pub fn find_min(&self) -> Option<&T> {
         match self {
             Heap::NonEmpty(ref node) => {
@@ -29,6 +36,25 @@ impl<T: Ord> Heap<T> {
                 node.left.find_min()                
             },
             Heap::Empty => None,
+        }
+    }
+
+    pub fn delete_min(self) -> Heap<T> {
+        match self {
+            Heap::Empty => Heap::Empty,
+            Heap::NonEmpty(node) => {
+                match node.left {
+                    Heap::Empty => node.right,
+                    Heap::NonEmpty(lnode) => {
+                        let h = Heap::new(node.element, lnode.right, node.right);
+                        if lnode.left.is_empty() {
+                            h
+                        } else {
+                            Heap::new(lnode.element, lnode.left.delete_min(), h)
+                        }
+                    },
+                }
+            },
         }
     }
 
@@ -92,12 +118,36 @@ mod tests {
     }
 
     #[test]
+    fn is_empty() {
+        let mut heap = Empty;
+        assert_eq!(heap.is_empty(), true);
+
+        heap = heap.insert(10);
+        assert_eq!(heap.is_empty(), false);
+    }
+
+    #[test]
     fn find_min() {
         let mut heap = Empty;
         assert_eq!(heap.find_min(), None);
 
         heap = heap.insert(20).insert(30).insert(25).insert(10).insert(15);
         assert_eq!(heap.find_min(), Some(&10));
+    }
+
+    #[test]
+    fn delete_min() {
+        let mut heap: Heap<u32> = Empty;
+        heap = heap.delete_min();
+        assert!(heap.is_empty());
+
+        //   10
+        //     \
+        //     15
+        heap = heap.insert(15).insert(10);
+        assert_eq!(heap.find_min(), Some(&10));
+        heap = heap.delete_min();
+        assert_eq!(heap.find_min(), Some(&15));
     }
 
     #[test]
