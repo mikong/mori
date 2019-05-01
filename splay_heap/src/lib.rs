@@ -20,6 +20,18 @@ impl<T: Ord> Tree<T> {
         }))
     }
 
+    pub fn find_min(&self) -> Option<&T> {
+        match self {
+            Tree::NonEmpty(ref node) => {
+                if let Tree::Empty = node.left {
+                    return Some(&node.element);
+                }
+                node.left.find_min()                
+            },
+            Tree::Empty => None,
+        }
+    }
+
     pub fn insert(self, element: T) -> Tree<T> {
         let (smaller, bigger) = self.partition(&element);
         Tree::new(element, smaller, bigger)
@@ -77,6 +89,15 @@ mod tests {
     #[test]
     fn it_works() {
         let _tree = Tree::new(5, Empty, Empty);
+    }
+
+    #[test]
+    fn find_min() {
+        let mut tree = Empty;
+        assert_eq!(tree.find_min(), None);
+
+        tree = tree.insert(20).insert(30).insert(25).insert(10).insert(15);
+        assert_eq!(tree.find_min(), Some(&10));
     }
 
     #[test]
