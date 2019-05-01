@@ -109,5 +109,41 @@ mod tests {
                 assert_eq!(rnode.element, 30);
             }
         }
+
+        //      15
+        //     /  \
+        //    10  20
+        //          \
+        //          25
+        //            \
+        //            30
+        tree = tree.insert(15);
+        if let NonEmpty(ref node) = tree {
+            assert_eq!(node.element, 15);
+            if let (NonEmpty(lnode), NonEmpty(rnode)) = (&node.left, &node.right) {
+                assert_eq!(lnode.element, 10);
+                assert_eq!(rnode.element, 20);
+            }
+        }
+
+        //       27
+        //      /  \
+        //     20   30
+        //    /  \
+        //  15   25
+        //  /
+        // 10
+        tree = tree.insert(27);
+        if let NonEmpty(ref node) = tree {
+            assert_eq!(node.element, 27);
+            if let (NonEmpty(lnode), NonEmpty(rnode)) = (&node.left, &node.right) {
+                assert_eq!(lnode.element, 20);
+                assert_eq!(rnode.element, 30);
+                if let (NonEmpty(ll), NonEmpty(lr)) = (&lnode.left, &lnode.right) {
+                    assert_eq!(ll.element, 15);
+                    assert_eq!(lr.element, 25);
+                }
+            }
+        }
     }
 }
