@@ -63,7 +63,11 @@ mod tests {
 
     #[test]
     fn find_min() {
-        unimplemented!();
+        let mut heap = Empty;
+        assert_eq!(heap.find_min(), None);
+
+        heap = heap.insert(20).insert(30).insert(25).insert(10).insert(15);
+        assert_eq!(heap.find_min(), Some(&10));
     }
 
     #[test]
