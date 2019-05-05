@@ -42,6 +42,11 @@ impl<T: Ord> Heap<T> {
             },
         }
     }
+
+    pub fn insert(self, x: T) -> Heap<T> {
+        let h = Heap::new(x, vec![]);
+        Heap::merge(h, self)
+    }
 }
 
 #[cfg(test)]
@@ -51,7 +56,9 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let _heap = Heap::new(5, vec![]);
+        let mut heap = Empty;
+        heap = heap.insert(5);
+        assert_eq!(heap.find_min(), Some(&5));
     }
 
     #[test]
