@@ -10,6 +10,15 @@ pub struct Node<T> {
     list: Vec<Heap<T>>,
 }
 
+impl<T> Heap<T> {
+    pub fn find_min(&self) -> Option<&T> {
+        match self {
+            Heap::NonEmpty(node) => Some(&node.element),
+            Heap::Empty => None,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -21,5 +30,10 @@ mod tests {
             element: 5,
             list: vec![],
         }));
+    }
+
+    #[test]
+    fn find_min() {
+        unimplemented!();
     }
 }
