@@ -30,14 +30,17 @@ impl<T: Ord> Heap<T> {
             (h, Heap::Empty) => h,
             (Heap::Empty, h) => h,
             (Heap::NonEmpty(mut h1), Heap::NonEmpty(mut h2)) => {
+                // The tree with the larger root should become
+                // the leftmost child of the tree with the smaller
+                // root. As an optimization, we can treat the list
+                // as if it's in reverse order so we only need to
+                // push to the end of the Vec.
                 if h1.element <= h2.element {
-                    let mut list = vec![Heap::NonEmpty(h2)];
-                    list.append(&mut h1.list);
-                    Heap::new(h1.element, list)
+                    h1.list.push(Heap::NonEmpty(h2));
+                    Heap::NonEmpty(h1)
                 } else {
-                    let mut list = vec![Heap::NonEmpty(h1)];
-                    list.append(&mut h2.list);
-                    Heap::new(h2.element, list)
+                    h2.list.push(Heap::NonEmpty(h1));
+                    Heap::NonEmpty(h2)
                 }
             },
         }
