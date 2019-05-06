@@ -50,6 +50,27 @@ impl<T: Ord> Heap<T> {
         let h = Heap::new(x, vec![]);
         Heap::merge(h, self)
     }
+
+    fn merge_pairs(mut list: Vec<Heap<T>>) -> Heap<T> {
+        if list.is_empty() {
+            Heap::Empty
+        } else if list.len() == 1 {
+            list.pop().unwrap()
+        } else {
+            let h1 = list.pop().unwrap();
+            let h2 = list.pop().unwrap();
+            Heap::merge(Heap::merge(h1, h2), Heap::merge_pairs(list))
+        }
+    }
+
+    pub fn delete_min(self) -> Heap<T> {
+        match self {
+            Heap::Empty => Heap::Empty,
+            Heap::NonEmpty(node) => {
+                Heap::merge_pairs(node.list)
+            },
+        }
+    }
 }
 
 #[cfg(test)]
