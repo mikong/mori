@@ -18,6 +18,13 @@ impl<T: Ord> Heap<T> {
         }))
     }
 
+    pub fn is_empty(&self) -> bool {
+        match self {
+            Heap::Empty => true,
+            _ => false,
+        }
+    }
+
     pub fn find_min(&self) -> Option<&T> {
         match self {
             Heap::NonEmpty(node) => Some(&node.element),
@@ -83,6 +90,15 @@ mod tests {
         let mut heap = Empty;
         heap = heap.insert(5);
         assert_eq!(heap.find_min(), Some(&5));
+    }
+
+    #[test]
+    fn is_empty() {
+        let mut heap = Empty;
+        assert_eq!(heap.is_empty(), true);
+
+        heap = heap.insert(10);
+        assert_eq!(heap.is_empty(), false);
     }
 
     #[test]
