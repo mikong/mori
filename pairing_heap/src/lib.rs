@@ -111,6 +111,18 @@ mod tests {
     }
 
     #[test]
+    fn delete_min() {
+        let mut heap = Empty;
+        heap = heap.delete_min();
+        assert_eq!(heap.is_empty(), true);
+
+        heap = heap.insert(20).insert(10).insert(15);
+        assert_eq!(heap.find_min(), Some(&10));
+        heap = heap.delete_min();
+        assert_eq!(heap.find_min(), Some(&15));
+    }
+
+    #[test]
     fn merge() {
         let mut heap = Heap::new(5, vec![]);
 
