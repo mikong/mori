@@ -19,15 +19,19 @@ pub struct Node {
 }
 
 impl MerkleTree {
+    fn new(element: GenericArray<u8, U32>, left: MerkleTree, right: MerkleTree) -> MerkleTree {
+        MerkleTree::NonEmpty(Box::new(Node {
+            element,
+            left,
+            right,
+        }))
+    }
+
     pub fn build<T: AsRef<[u8]>>(data: &Vec<T>) -> MerkleTree {
         let mut leaf_nodes = data.iter().map(|val| {
             let hash = Sha256::digest(val.as_ref());
 
-            MerkleTree::NonEmpty(Box::new(Node {
-                element: hash,
-                left: MerkleTree::Empty,
-                right: MerkleTree::Empty,
-            }))
+            MerkleTree::new(hash, MerkleTree::Empty, MerkleTree::Empty)
         }).collect();
 
         MerkleTree::build_tree(&mut leaf_nodes)
@@ -42,19 +46,8 @@ impl MerkleTree {
             mem::swap(&mut left, &mut pair[0]);
             mem::swap(&mut right, &mut pair[1]);
 
-            let value = match (&left, &right) {
-                (MerkleTree::NonEmpty(l), MerkleTree::NonEmpty(r)) => {
-                    l.element.concat(r.element)
-                },
-                (_, _) => unreachable!(),
-            };
-            let hash = Sha256::digest(&value);
-
-            let tree = MerkleTree::NonEmpty(Box::new(Node {
-                element: hash,
-                left: left,
-                right: right,
-            }));
+            let hash = MerkleTree::concat_and_hash(&left, &right);
+            let tree = MerkleTree::new(hash, left, right);
 
             new_nodes.push(tree);
         }
@@ -68,6 +61,17 @@ impl MerkleTree {
         }
 
         MerkleTree::build_tree(&mut new_nodes)
+    }
+
+    fn concat_and_hash(left: &MerkleTree, right: &MerkleTree) -> GenericArray<u8, U32> {
+        let value = match (&left, &right) {
+            (MerkleTree::NonEmpty(l), MerkleTree::NonEmpty(r)) => {
+                l.element.concat(r.element)
+            },
+            (_, _) => unreachable!(),
+        };
+
+        Sha256::digest(&value)
     }
 }
 
