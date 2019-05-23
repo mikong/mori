@@ -27,7 +27,7 @@ impl MerkleTree {
         }))
     }
 
-    pub fn build<T: AsRef<[u8]>>(data: &Vec<T>) -> MerkleTree {
+    pub fn build<T: AsRef<[u8]>>(data: &[T]) -> MerkleTree {
         let mut leaf_nodes = data.iter().map(|val| {
             let hash = Sha256::digest(val.as_ref());
 
