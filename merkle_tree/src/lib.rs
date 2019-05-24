@@ -5,6 +5,12 @@ use sha2::digest::generic_array::GenericArray;
 use sha2::digest::generic_array::typenum::U32;
 use sha2::digest::generic_array::sequence::Concat;
 
+#[derive(Debug, PartialEq)]
+pub enum Position {
+    Left,
+    Right,
+}
+
 #[derive(Debug)]
 pub enum MerkleTree {
     Empty,
@@ -14,14 +20,21 @@ pub enum MerkleTree {
 #[derive(Debug)]
 pub struct Node {
     element: GenericArray<u8, U32>,
+    leaf_count: usize,
     left: MerkleTree,
     right: MerkleTree,
 }
 
 impl MerkleTree {
-    fn new(element: GenericArray<u8, U32>, left: MerkleTree, right: MerkleTree) -> MerkleTree {
+    fn new(
+        element: GenericArray<u8, U32>,
+        leaf_count: usize,
+        left: MerkleTree,
+        right: MerkleTree
+    ) -> MerkleTree {
         MerkleTree::NonEmpty(Box::new(Node {
             element,
+            leaf_count,
             left,
             right,
         }))
@@ -31,7 +44,7 @@ impl MerkleTree {
         let mut leaf_nodes = data.iter().map(|val| {
             let hash = Sha256::digest(val.as_ref());
 
-            MerkleTree::new(hash, MerkleTree::Empty, MerkleTree::Empty)
+            MerkleTree::new(hash, 1, MerkleTree::Empty, MerkleTree::Empty)
         }).collect();
 
         MerkleTree::build_tree(&mut leaf_nodes)
@@ -47,7 +60,8 @@ impl MerkleTree {
             mem::swap(&mut right, &mut pair[1]);
 
             let hash = MerkleTree::concat_and_hash(&left, &right);
-            let tree = MerkleTree::new(hash, left, right);
+            let leaf_count = left.leaf_count() + right.leaf_count();
+            let tree = MerkleTree::new(hash, leaf_count, left, right);
 
             new_nodes.push(tree);
         }
@@ -72,6 +86,51 @@ impl MerkleTree {
         };
 
         Sha256::digest(&value)
+    }
+
+    fn leaf_count(&self) -> usize {
+        match self {
+            MerkleTree::NonEmpty(n) => n.leaf_count,
+            MerkleTree::Empty => 0,
+        }
+    }
+
+    /// Returns the hashes needed to verify the data at `index`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `index` is out of bounds.
+    pub fn get_proof(&self, index: usize) -> Vec<(Position, GenericArray<u8, U32>)> {
+        if index >= self.leaf_count() {
+            panic!(
+                "index out of bounds: the len is {} but the index is {}",
+                self.leaf_count(),
+                index
+            );
+        }
+
+        let mut stack = Vec::new();
+        let mut current = self;
+        let mut base = 0;
+
+        use MerkleTree::NonEmpty;
+        while current.leaf_count() > 1 {
+            if let NonEmpty(node) = current {
+                if let (NonEmpty(l), NonEmpty(r)) = (&node.left, &node.right) {
+                    if index < l.leaf_count + base {
+                        stack.push((Position::Right, r.element));
+                        current = &node.left;
+                    } else {
+                        base += l.leaf_count;
+                        stack.push((Position::Left, l.element));
+                        current = &node.right;
+                    }
+                }
+            }
+        }
+
+        stack.reverse();
+        stack
     }
 }
 
@@ -113,5 +172,57 @@ mod tests {
         } else {
             panic!("Tree can't be empty");
         }
+    }
+
+    #[test]
+    fn leaf_count() {
+        let tree = MerkleTree::Empty;
+        assert_eq!(tree.leaf_count(), 0);
+
+        let data = ["A"];
+        let tree = MerkleTree::build(&data);
+        assert_eq!(tree.leaf_count(), 1);
+
+        let data = ["A", "B", "C", "D", "E"];
+        let tree = MerkleTree::build(&data);
+        assert_eq!(tree.leaf_count(), 5);
+    }
+
+    #[test]
+    fn get_proof() {
+        let data = ["A", "B", "C", "D", "E"];
+        let tree = MerkleTree::build(&data);
+        let proof = tree.get_proof(2);
+
+        let ha = Sha256::digest(b"A");
+        let hb = Sha256::digest(b"B");
+        let hd = Sha256::digest(b"D");
+        let he = Sha256::digest(b"E");
+        let hab = Sha256::digest(&ha.concat(hb));
+
+        //                root
+        //              //    \
+        //          habcd      he
+        //         /     \\
+        //      hab       hcd
+        //     /   \     //  \
+        //   ha     hb  hc    hd
+        //
+        // The path to index 2 or "C" is marked with // or \\. To
+        // verify, we need the hashes from the siblings of the nodes
+        // in the path: hd, hab, and he.
+        let mut proof_iter = proof.iter();
+
+        let (pos, hash) = proof_iter.next().unwrap();
+        assert_eq!(pos, &Position::Right);
+        assert_eq!(*hash, GenericArray::clone_from_slice(&hd));
+
+        let (pos, hash) = proof_iter.next().unwrap();
+        assert_eq!(pos, &Position::Left);
+        assert_eq!(*hash, GenericArray::clone_from_slice(&hab));
+
+        let (pos, hash) = proof_iter.next().unwrap();
+        assert_eq!(pos, &Position::Right);
+        assert_eq!(*hash, GenericArray::clone_from_slice(&he));
     }
 }
