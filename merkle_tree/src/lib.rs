@@ -132,6 +132,18 @@ impl MerkleTree {
         stack.reverse();
         stack
     }
+
+    /// Returns the root hash of the tree.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `MerkleTree` is `Empty`.
+    pub fn root_hash(&self) -> GenericArray<u8, U32> {
+        match self {
+            MerkleTree::NonEmpty(node) => node.element,
+            MerkleTree::Empty => panic!("Merkle tree can't be empty"),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -163,8 +175,8 @@ mod tests {
         //       hab = H(ha + hb)            hcd = H(hc + hd)
         //       /             \             /             \
         //   ha = H("A")    hb = H("B")  hc = H("C")    hd = H("D")
+        assert_eq!(tree.root_hash(), GenericArray::clone_from_slice(&root_hash));
         if let NonEmpty(node) = tree {
-            assert_eq!(node.element, GenericArray::clone_from_slice(&root_hash));
             if let (NonEmpty(lnode), NonEmpty(rnode)) = (&node.left, &node.right) {
                 assert_eq!(lnode.element, GenericArray::clone_from_slice(&habcd));
                 assert_eq!(rnode.element, GenericArray::clone_from_slice(&he));
