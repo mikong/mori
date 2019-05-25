@@ -40,7 +40,16 @@ impl MerkleTree {
         }))
     }
 
+    /// Creates a `MerkleTree` from a slice of `data`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `data.len()` is 0.
     pub fn build<T: AsRef<[u8]>>(data: &[T]) -> MerkleTree {
+        if data.len() == 0 {
+            panic!("Merkle tree can't be empty: the len is 0");
+        }
+
         let mut leaf_nodes = data.iter().map(|val| {
             let hash = Sha256::digest(val.as_ref());
 
@@ -150,6 +159,13 @@ impl MerkleTree {
 mod tests {
     use super::*;
     use super::MerkleTree::*;
+
+    #[test]
+    #[should_panic]
+    fn zero_element() {
+        let data: [String; 0] = [];
+        MerkleTree::build(&data);
+    }
 
     #[test]
     fn it_works() {
