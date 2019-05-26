@@ -168,6 +168,30 @@ mod tests {
     }
 
     #[test]
+    fn small_trees() {
+        let ha = Sha256::digest(b"A");
+        let hb = Sha256::digest(b"B");
+        let hc = Sha256::digest(b"C");
+        let hab = Sha256::digest(&ha.concat(hb));
+        let habc = Sha256::digest(&hab.concat(hc));
+
+        // smallest: one-element tree
+        let data = ["A"];
+        let tree = MerkleTree::build(&data);
+        assert_eq!(tree.root_hash(), GenericArray::clone_from_slice(&ha));
+
+        // smallest with children: two-element tree
+        let data = ["A", "B"];
+        let tree = MerkleTree::build(&data);
+        assert_eq!(tree.root_hash(), GenericArray::clone_from_slice(&hab));
+
+        // smallest unbalanced: three-element tree
+        let data = ["A", "B", "C"];
+        let tree = MerkleTree::build(&data);
+        assert_eq!(tree.root_hash(), GenericArray::clone_from_slice(&habc));
+    }
+
+    #[test]
     fn it_works() {
         let data = vec!["A", "B", "C", "D", "E"];
         let tree = MerkleTree::build(&data);
