@@ -14,6 +14,8 @@ A collection of common tree data structures implemented in Rust.
 
 ### [Pairing Heap][ph]
 
+### [Merkle Tree](/merkle_tree/)
+
 [bst]: binary_search_tree/
 [rbt]: red_black_tree/
 [lh]: leftist_heap/
