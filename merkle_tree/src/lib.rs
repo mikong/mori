@@ -155,6 +155,23 @@ impl MerkleTree {
             MerkleTree::Empty => panic!("Merkle tree can't be empty"),
         }
     }
+
+    /// Returns true if the `target` hash is in the tree, and the
+    /// `proof` is valid and connects the `target` to the `root`
+    pub fn validate(
+        target: HashResult,
+        proof: Vec<(Position, HashResult)>,
+        root: HashResult
+    ) -> bool {
+        let hash = proof.iter().fold(target, |acc, (pos, h)| {
+            match pos {
+                Position::Right => Sha256::digest(&acc.concat(*h)),
+                Position::Left => Sha256::digest(&h.concat(acc)),
+            }
+        });
+
+        hash == root
+    }
 }
 
 #[cfg(test)]
@@ -278,5 +295,39 @@ mod tests {
         let (pos, hash) = proof_iter.next().unwrap();
         assert_eq!(pos, &Position::Right);
         assert_eq!(*hash, GenericArray::clone_from_slice(&he));
+    }
+
+    #[test]
+    fn validate() {
+        // smallest: one-element tree
+        let data = ["A"];
+        let tree = MerkleTree::build(&data);
+        let root = tree.root_hash();
+        let ha = Sha256::digest(b"A");
+        let proof = tree.get_proof(0);
+        assert_eq!(proof.len(), 0);
+        assert_eq!(MerkleTree::validate(ha, proof, root), true);
+
+        // 7-element tree
+        let data = ["A", "B", "C", "D", "E", "F", "G"];
+        let tree = MerkleTree::build(&data);
+        let root = tree.root_hash();
+
+        let hc = Sha256::digest(b"C");
+        let proof = tree.get_proof(2);
+        assert_eq!(MerkleTree::validate(hc, proof, root), true);
+
+        // wrong proof
+        let proof = tree.get_proof(3);
+        assert_eq!(MerkleTree::validate(hc, proof, root), false);
+
+        let hf = Sha256::digest(b"F");
+        let proof = tree.get_proof(5);
+        assert_eq!(MerkleTree::validate(hf, proof, root), true);
+
+        // target not in Merkle Tree
+        let hh = Sha256::digest(b"H");
+        let proof = tree.get_proof(6);
+        assert_eq!(MerkleTree::validate(hh, proof, root), false);
     }
 }
