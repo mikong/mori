@@ -5,6 +5,8 @@ use sha2::digest::generic_array::GenericArray;
 use sha2::digest::generic_array::typenum::U32;
 use sha2::digest::generic_array::sequence::Concat;
 
+type HashResult = GenericArray<u8, U32>;
+
 #[derive(Debug, PartialEq)]
 pub enum Position {
     Left,
@@ -19,7 +21,7 @@ pub enum MerkleTree {
 
 #[derive(Debug)]
 pub struct Node {
-    element: GenericArray<u8, U32>,
+    element: HashResult,
     leaf_count: usize,
     left: MerkleTree,
     right: MerkleTree,
@@ -27,7 +29,7 @@ pub struct Node {
 
 impl MerkleTree {
     fn new(
-        element: GenericArray<u8, U32>,
+        element: HashResult,
         leaf_count: usize,
         left: MerkleTree,
         right: MerkleTree
@@ -86,7 +88,7 @@ impl MerkleTree {
         MerkleTree::build_tree(&mut new_nodes)
     }
 
-    fn concat_and_hash(left: &MerkleTree, right: &MerkleTree) -> GenericArray<u8, U32> {
+    fn concat_and_hash(left: &MerkleTree, right: &MerkleTree) -> HashResult {
         let value = match (&left, &right) {
             (MerkleTree::NonEmpty(l), MerkleTree::NonEmpty(r)) => {
                 l.element.concat(r.element)
@@ -109,7 +111,7 @@ impl MerkleTree {
     /// # Panics
     ///
     /// Panics if `index` is out of bounds.
-    pub fn get_proof(&self, index: usize) -> Vec<(Position, GenericArray<u8, U32>)> {
+    pub fn get_proof(&self, index: usize) -> Vec<(Position, HashResult)> {
         if index >= self.leaf_count() {
             panic!(
                 "index out of bounds: the len is {} but the index is {}",
@@ -147,7 +149,7 @@ impl MerkleTree {
     /// # Panics
     ///
     /// Panics if `MerkleTree` is `Empty`.
-    pub fn root_hash(&self) -> GenericArray<u8, U32> {
+    pub fn root_hash(&self) -> HashResult {
         match self {
             MerkleTree::NonEmpty(node) => node.element,
             MerkleTree::Empty => panic!("Merkle tree can't be empty"),
